@@ -6096,9 +6096,9 @@ rc@^1.0.1, rc@^1.1.6, rc@^1.2.7:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
-react-admin-firebase@^0.1.7:
-  version "0.1.7"
-  resolved "https://registry.yarnpkg.com/react-admin-firebase/-/react-admin-firebase-0.1.7.tgz#e5ced4ec72c32eb5a81735811e65c7b4a28bfe5e"
+react-admin-firebase@^0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/react-admin-firebase/-/react-admin-firebase-0.1.9.tgz#22acd3e9679e68de1409a3818c21d9318fde3069"
   dependencies:
     firebase "^5.5.0"
     react-admin "^2.3.1"
