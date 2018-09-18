@@ -15,7 +15,9 @@ import {
   ShowButton,
   EditButton,
   DeleteButton,
-  RichTextField
+  RichTextField,
+  SelectInput,
+  SelectField
 } from "react-admin";
 import RichTextInput from "ra-input-rich-text";
 
@@ -42,7 +44,7 @@ export const PostShow = (props) => (
 );
 
 export const PostCreate = (props) => (
-  <Create {...props}>
+  <Create {...props} >
     <SimpleForm>
       <TextInput source="title" />
       <RichTextInput source="body" />
@@ -56,6 +58,11 @@ export const PostEdit = (props) => (
       <DisabledInput source="id" />
       <TextInput source="title" />
       <RichTextInput source="body" />
+      <SelectInput source="rating" choices={[
+        { id: 1, name: 'Good' },
+        { id: 2, name: 'Okay' },
+        { id: 3, name: 'Bad' },
+      ]} />
     </SimpleForm>
   </Edit>
 );
