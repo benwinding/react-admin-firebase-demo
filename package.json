@@ -6,7 +6,7 @@
     "ra-input-rich-text": "^2.3.0",
     "react": "^16.5.1",
     "react-admin": "^2.3.1",
-    "react-admin-firebase": "^0.2.5",
+    "react-admin-firebase": "^0.2.8",
     "react-dom": "^16.5.1",
     "react-scripts": "1.1.5",
     "redux-saga": "^0.16.0"
