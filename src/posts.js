@@ -7,6 +7,7 @@ import {
   Show,
   Create,
   Edit,
+  Filter,
   DisabledInput,
   SimpleShowLayout,
   SimpleForm,
@@ -16,19 +17,24 @@ import {
   EditButton,
   DeleteButton,
   RichTextField,
-  SelectInput,
-  SelectField
+  SelectInput
 } from "react-admin";
 import RichTextInput from "ra-input-rich-text";
 
+const PostFilter = (props) => (
+  <Filter {...props}>
+    <TextInput label="Search" source="title" alwaysOn />
+  </Filter>
+);
+
 export const PostList = (props) => (
-  <List {...props}>
+  <List {...props} filters={<PostFilter />}>
     <Datagrid>
       <TextField source="title" />
       <RichTextField source="body" />
-      <ShowButton />
-      <EditButton />
-      <DeleteButton />
+      <ShowButton label="" />
+      <EditButton label="" />
+      <DeleteButton label="" />
     </Datagrid>
   </List>
 );
