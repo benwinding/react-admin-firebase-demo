@@ -1,5 +1,14 @@
 import * as React from "react";
-import { PostList, PostSubList, PostSubShow, PostShow, PostCreate, PostEdit } from "./posts";
+import {
+  PostList,
+  PostShow,
+  PostCreate,
+  PostEdit,
+  PostSubList,
+  PostSubShow,
+  PostSubCreate,
+  PostSubEdit
+} from "./posts";
 import { TagList, TagShow, TagCreate, TagEdit } from "./tags";
 import { Admin, Resource } from "react-admin";
 import {
@@ -7,7 +16,7 @@ import {
   FirebaseDataProvider
 } from "react-admin-firebase";
 
-import LocalOffer from '@material-ui/icons/LocalOffer';
+import LocalOffer from "@material-ui/icons/LocalOffer";
 
 const config = require("./FIREBASE_CONFIG.js").config;
 
@@ -20,9 +29,7 @@ const firebaseRealtime = FirebaseRealTimeSaga(dataProvider, options);
 class App extends React.Component {
   render() {
     return (
-      <Admin
-      customSagas={[firebaseRealtime]}
-      dataProvider={dataProvider}>
+      <Admin customSagas={[firebaseRealtime]} dataProvider={dataProvider}>
         <Resource
           name="posts"
           list={PostList}
@@ -34,6 +41,8 @@ class App extends React.Component {
           name="posts*sub"
           list={PostSubList}
           show={PostSubShow}
+          create={PostSubCreate}
+          edit={PostSubEdit}
         />
         <Resource
           name="tags"
