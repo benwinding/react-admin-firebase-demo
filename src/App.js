@@ -1,27 +1,48 @@
-import * as React from 'react';
-import { PostList, PostShow, PostCreate, PostEdit } from "./posts";
-import { Admin, Resource } from 'react-admin';
+import * as React from "react";
+import { PostList, PostSubList, PostSubShow, PostShow, PostCreate, PostEdit } from "./posts";
+import { TagList, TagShow, TagCreate, TagEdit } from "./tags";
+import { Admin, Resource } from "react-admin";
 import {
   FirebaseRealTimeSaga,
   FirebaseDataProvider
-} from 'react-admin-firebase';
+} from "react-admin-firebase";
 
-const config = require('./FIREBASE_CONFIG.js').config;
+import LocalOffer from '@material-ui/icons/LocalOffer';
 
-const dataProvider = FirebaseDataProvider(config);
+const config = require("./FIREBASE_CONFIG.js").config;
+
+const dataProvider = FirebaseDataProvider(config, true);
 const options = {
-  observe: ['posts']
-}
+  observe: ["posts"]
+};
 const firebaseRealtime = FirebaseRealTimeSaga(dataProvider, options);
 
 class App extends React.Component {
   render() {
     return (
       <Admin
-        customSagas={[firebaseRealtime]}
-        dataProvider={dataProvider}
-      >
-        <Resource name="posts" list={PostList} show={PostShow} create={PostCreate} edit={PostEdit} />
+      customSagas={[firebaseRealtime]}
+      dataProvider={dataProvider}>
+        <Resource
+          name="posts"
+          list={PostList}
+          show={PostShow}
+          create={PostCreate}
+          edit={PostEdit}
+        />
+        <Resource
+          name="posts*sub"
+          list={PostSubList}
+          show={PostSubShow}
+        />
+        <Resource
+          name="tags"
+          icon={LocalOffer}
+          list={TagList}
+          show={TagShow}
+          create={TagCreate}
+          edit={TagEdit}
+        />
       </Admin>
     );
   }

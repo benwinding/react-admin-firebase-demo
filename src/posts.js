@@ -21,13 +21,13 @@ import {
 } from "react-admin";
 import RichTextInput from "ra-input-rich-text";
 
-const PostFilter = (props) => (
+const PostFilter = props => (
   <Filter {...props}>
     <TextInput label="Search" source="title" alwaysOn />
   </Filter>
 );
 
-export const PostList = (props) => (
+export const PostList = props => (
   <List {...props} filters={<PostFilter />}>
     <Datagrid>
       <TextField source="title" />
@@ -39,7 +39,7 @@ export const PostList = (props) => (
   </List>
 );
 
-export const PostShow = (props) => (
+export const PostShow = props => (
   <Show {...props}>
     <SimpleShowLayout>
       <TextField source="id" />
@@ -49,8 +49,8 @@ export const PostShow = (props) => (
   </Show>
 );
 
-export const PostCreate = (props) => (
-  <Create {...props} >
+export const PostCreate = props => (
+  <Create {...props}>
     <SimpleForm>
       <TextInput source="title" />
       <RichTextInput source="body" />
@@ -58,17 +58,41 @@ export const PostCreate = (props) => (
   </Create>
 );
 
-export const PostEdit = (props) => (
+export const PostEdit = props => (
   <Edit {...props}>
     <SimpleForm>
       <DisabledInput source="id" />
       <TextInput source="title" />
       <RichTextInput source="body" />
-      <SelectInput source="rating" choices={[
-        { id: 1, name: 'Good' },
-        { id: 2, name: 'Okay' },
-        { id: 3, name: 'Bad' },
-      ]} />
+      <SelectInput
+        source="rating"
+        choices={[
+          { id: 1, name: "Good" },
+          { id: 2, name: "Okay" },
+          { id: 3, name: "Bad" }
+        ]}
+      />
     </SimpleForm>
   </Edit>
 );
+
+export const PostSubList = props => (
+  <List {...props} filters={<PostFilter />}>
+    <Datagrid>
+      <TextField source="title" />
+      <ShowButton label="" />
+      <EditButton label="" />
+      <DeleteButton label="" />
+    </Datagrid>
+  </List>
+);
+
+export const PostSubShow = props => (
+  <Show {...props}>
+    <SimpleShowLayout>
+      <TextField source="id" />
+      <TextField source="title" />
+    </SimpleShowLayout>
+  </Show>
+);
+
