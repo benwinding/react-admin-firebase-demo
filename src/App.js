@@ -4,11 +4,13 @@ import {
   PostShow,
   PostCreate,
   PostEdit,
-  PostSubList,
-  PostSubShow,
-  PostSubCreate,
-  PostSubEdit
 } from "./posts";
+import {
+  PostCommentList,
+  PostCommentShow,
+  PostCommentCreate,
+  PostCommentEdit
+} from "./post-comments";
 import { TagList, TagShow, TagCreate, TagEdit } from "./tags";
 import { Admin, Resource } from "react-admin";
 import {
@@ -38,11 +40,11 @@ class App extends React.Component {
           edit={PostEdit}
         />
         <Resource
-          name="posts*sub"
-          list={PostSubList}
-          show={PostSubShow}
-          create={PostSubCreate}
-          edit={PostSubEdit}
+          name="posts*comments"
+          list={PostCommentList}
+          show={PostCommentShow}
+          create={PostCommentCreate}
+          edit={PostCommentEdit}
         />
         <Resource
           name="tags"
