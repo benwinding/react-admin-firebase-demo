@@ -34,7 +34,7 @@ export const PostList = (props) => (
       <RichTextField source="body" />
       <ShowButton label="" />
       <EditButton label="" />
-      <DeleteButton label="" />
+      <DeleteButton label="" redirect={false}/>
     </Datagrid>
   </List>
 );

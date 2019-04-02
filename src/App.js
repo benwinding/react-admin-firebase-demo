@@ -1,17 +1,19 @@
-import * as React from 'react';
+import * as React from "react";
 import { PostList, PostShow, PostCreate, PostEdit } from "./posts";
-import { Admin, Resource } from 'react-admin';
+import { Admin, Resource } from "react-admin";
 import {
   FirebaseRealTimeSaga,
-  FirebaseDataProvider
-} from 'react-admin-firebase';
+  FirebaseDataProvider,
+  FirebaseAuthProvider
+} from "react-admin-firebase";
 
-const config = require('./FIREBASE_CONFIG.js').config;
+const config = require("./FIREBASE_CONFIG.js").config;
 
+const authProvider = FirebaseAuthProvider(config);
 const dataProvider = FirebaseDataProvider(config);
 const options = {
-  observe: ['posts']
-}
+  observe: ["posts"]
+};
 const firebaseRealtime = FirebaseRealTimeSaga(dataProvider, options);
 
 class App extends React.Component {
@@ -20,8 +22,15 @@ class App extends React.Component {
       <Admin
         customSagas={[firebaseRealtime]}
         dataProvider={dataProvider}
+        authProvider={authProvider}
       >
-        <Resource name="posts" list={PostList} show={PostShow} create={PostCreate} edit={PostEdit} />
+        <Resource
+          name="posts"
+          list={PostList}
+          show={PostShow}
+          create={PostCreate}
+          edit={PostEdit}
+        />
       </Admin>
     );
   }
