@@ -200,13 +200,6 @@
     "@babel/runtime" "7.0.0-beta.42"
     recompose "^0.26.0 || ^0.27.0"
 
-"@types/firebase@^3.2.1":
-  version "3.2.1"
-  resolved "https://registry.yarnpkg.com/@types/firebase/-/firebase-3.2.1.tgz#17c1c8fee7485ab09668d2461e34540bdf44b3b1"
-  integrity sha512-G8XgHMu2jHlElfc2xVNaYP50F0qrqeTCjgeG1v5b4SRwWG4XKC4fCuEdVZuZaMRmVygcnbRZBAo9O7RsDvmkGQ==
-  dependencies:
-    firebase "*"
-
 "@types/jss@^9.5.3":
   version "9.5.8"
   resolved "https://registry.yarnpkg.com/@types/jss/-/jss-9.5.8.tgz#258391f42211c042fc965508d505cbdc579baa5b"
@@ -214,11 +207,6 @@
   dependencies:
     csstype "^2.0.0"
     indefinite-observable "^1.0.1"
-
-"@types/node@^10.9.4":
-  version "10.14.4"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-10.14.4.tgz#1c586b991457cbb58fef51bc4e0cfcfa347714b5"
-  integrity sha512-DT25xX/YgyPKiHFOpNuANIQIVvYEwCWXgK2jYYwqgaMrYE6+tq+DtmMwlD3drl6DJbUwtlIDnn0d7tIn/EbXBg==
 
 "@types/prop-types@*":
   version "15.7.0"
@@ -3505,7 +3493,7 @@ find-up@^2.0.0, find-up@^2.1.0:
   dependencies:
     locate-path "^2.0.0"
 
-firebase@*, firebase@^5.5.0:
+firebase@^5.5.0:
   version "5.9.2"
   resolved "https://registry.yarnpkg.com/firebase/-/firebase-5.9.2.tgz#ddf54bea24910b148fa1480570683b489db02f1e"
   integrity sha512-AvXD/LEr9BqyOP3zFNid3+MzWQXNMRVaAT+VkUEkS0iPQLspjUgM2LhUvqRmF//BE+R/fIe9LIEef0WRrvNnCg==
@@ -7072,20 +7060,17 @@ rc@^1.0.1, rc@^1.1.6, rc@^1.2.7:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
-react-admin-firebase@0.4.1:
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/react-admin-firebase/-/react-admin-firebase-0.4.1.tgz#8c87495c210c0830fb2b379cb7fe7a2bab37fe6c"
-  integrity sha512-3+2d1WXSt0CSeUN1EFXMadGdG/OSZzHzy7oQdItEfcpKfHsBlVY2GvXtrTVQ7PRoaXOA7KwZZ74GZp9PwKUgfg==
+react-admin-firebase@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/react-admin-firebase/-/react-admin-firebase-0.5.0.tgz#cba13cb95212b3bff44c8bfe2a9a372863506a48"
+  integrity sha512-TZu/bj0K1PSRbO4pavZqRkKo5L0vU1f59MNUlKNIXdY8UE53clzofcM1L/es5se29UxgEZ9PykCCBsPX2OV/AA==
   dependencies:
-    "@types/firebase" "^3.2.1"
-    "@types/node" "^10.9.4"
     firebase "^5.5.0"
     ra-realtime "^2.6.0"
     react "^16.8.6"
     react-admin "^2.3.1"
     react-dom "^16.8.6"
     rxjs "^6.3.2"
-    typescript "^3.0.3"
 
 react-admin@^2.3.1, react-admin@^2.7.0:
   version "2.8.4"
@@ -8639,11 +8624,6 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
-
-typescript@^3.0.3:
-  version "3.4.1"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.4.1.tgz#b6691be11a881ffa9a05765a205cb7383f3b63c6"
-  integrity sha512-3NSMb2VzDQm8oBTLH6Nj55VVtUEpe/rgkIzMir0qVoLyjDZlnMBva0U6vDiV3IH+sl/Yu6oP5QwsAQtHPmDd2Q==
 
 ua-parser-js@^0.7.18:
   version "0.7.19"

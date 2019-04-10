@@ -32,6 +32,8 @@ export const PostList = (props) => (
     <Datagrid>
       <TextField source="title" />
       <RichTextField source="body" />
+      <TextField source="createdate" />
+      <TextField source="lastupdate" />
       <ShowButton label="" />
       <EditButton label="" />
       <DeleteButton label="" redirect={false}/>
@@ -44,6 +46,8 @@ export const PostShow = (props) => (
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="title" />
+      <TextField source="createdate" />
+      <TextField source="lastupdate" />
       <RichTextField source="body" />
     </SimpleShowLayout>
   </Show>
@@ -62,6 +66,8 @@ export const PostEdit = (props) => (
   <Edit {...props}>
     <SimpleForm>
       <DisabledInput source="id" />
+      <DisabledInput source="createdate" />
+      <DisabledInput source="lastupdate" />
       <TextInput source="title" />
       <RichTextInput source="body" />
       <SelectInput source="rating" choices={[
