@@ -7,7 +7,7 @@ import {
   FirebaseAuthProvider
 } from "react-admin-firebase";
 
-const config = require("./FIREBASE_CONFIG.js").config;
+import { firebaseConfig as config } from './FIREBASE_CONFIG';
 
 const authProvider = FirebaseAuthProvider(config);
 const dataProvider = FirebaseDataProvider(config);

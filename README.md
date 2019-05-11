@@ -1,11 +1,13 @@
 An example project for the [react-admin-firebase](https://github.com/benwinding/react-admin-firebase) package.
 
-# Get started
+# Demo
+Try the [demo here!]()
 
+# Get started
 You need to add the private Firebase connection file: `src/FIREBASE_CONFIG.js` with the following format from firebase:
 
 ``` js
-export const config = {
+export const firebaseConfig = {
   apiKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaa",
   authDomain: "aaaaaaaaaaaaaaaaaaaaaaaaaaa",
   databaseURL: "aaaaaaaaaaaaaaaaaaaaaaaaaaa",

@@ -6,15 +6,19 @@
     "ra-input-rich-text": "^2.3.0",
     "react": "^16.5.1",
     "react-admin": "^2.7.0",
-    "react-admin-firebase": "^0.5.0",
+    "react-admin-firebase": "0.5.3",
     "react-dom": "^16.5.1",
     "react-scripts": "1.1.5",
     "redux-saga": "^0.16.0"
   },
   "scripts": {
-    "start": "PORT=3333 react-scripts start",
+    "start": "BROWSER=none PORT=3333 react-scripts start",
+    "deploy": "gh-pages -d build",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
+  },
+  "devDependencies": {
+    "gh-pages": "^2.0.1"
   }
 }
