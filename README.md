@@ -1,7 +1,12 @@
 An example project for the [react-admin-firebase](https://github.com/benwinding/react-admin-firebase) package.
 
 # Demo
-Try the [demo here!]()
+Try the [demo here!]('https://react-admin-firebase-1.web.app')
+
+```
+username: test@example.com
+password: test@example.com
+```
 
 # Get started
 You need to add the private Firebase connection file: `src/FIREBASE_CONFIG.js` with the following format from firebase:
