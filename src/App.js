@@ -8,6 +8,7 @@ import {
 } from "react-admin-firebase";
 
 import { firebaseConfig as config } from './FIREBASE_CONFIG';
+config.debug = true;
 
 const authProvider = FirebaseAuthProvider(config);
 const dataProvider = FirebaseDataProvider(config);
