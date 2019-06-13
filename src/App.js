@@ -1,5 +1,6 @@
 import * as React from "react";
 import { PostList, PostShow, PostCreate, PostEdit } from "./posts";
+import { CommentList, CommentShow, CommentCreate, CommentEdit } from "./comments";
 import { Admin, Resource } from "react-admin";
 import {
   FirebaseRealTimeSaga,
@@ -11,7 +12,11 @@ import { firebaseConfig as config } from './FIREBASE_CONFIG';
 config.debug = true;
 
 const authProvider = FirebaseAuthProvider(config);
-const dataProvider = FirebaseDataProvider(config);
+const dataOptions = {
+  logging: true,
+  rootRef: 'root_collection/some_document'
+}
+const dataProvider = FirebaseDataProvider(config, dataOptions);
 const options = {
   observe: ["posts"]
 };
@@ -31,6 +36,13 @@ class App extends React.Component {
           show={PostShow}
           create={PostCreate}
           edit={PostEdit}
+        />
+        <Resource
+          name="comments"
+          list={CommentList}
+          show={CommentShow}
+          create={CommentCreate}
+          edit={CommentEdit}
         />
       </Admin>
     );

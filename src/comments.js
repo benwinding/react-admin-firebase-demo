@@ -1,4 +1,4 @@
-// in src/posts.js
+// in src/Comments.js
 import * as React from "react";
 // tslint:disable-next-line:no-var-requires
 import {
@@ -7,12 +7,9 @@ import {
   Show,
   Create,
   Edit,
-  Filter,
   DisabledInput,
   SimpleShowLayout,
   SimpleForm,
-  ReferenceField,
-  ReferenceInput,
   TextField,
   TextInput,
   ShowButton,
@@ -23,19 +20,11 @@ import {
 } from "react-admin";
 import RichTextInput from "ra-input-rich-text";
 
-const PostFilter = (props) => (
-  <Filter {...props}>
-    <TextInput label="Search" source="title" alwaysOn />
-  </Filter>
-);
-
-export const PostList = (props) => (
-  <List {...props} filters={<PostFilter />}>
+export const CommentList = (props) => (
+  <List {...props}>
     <Datagrid>
       <TextField source="title" />
       <RichTextField source="body" />
-      <TextField source="createdate" />
-      <TextField source="lastupdate" />
       <ShowButton label="" />
       <EditButton label="" />
       <DeleteButton label="" redirect={false}/>
@@ -43,42 +32,33 @@ export const PostList = (props) => (
   </List>
 );
 
-export const PostShow = (props) => (
+export const CommentShow = (props) => (
   <Show {...props}>
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="title" />
-      <ReferenceField label="Comment" source="title" reference="comments">
-        <TextField source="title" />
-      </ReferenceField>
-      <TextField source="createdate" />
-      <TextField source="lastupdate" />
       <RichTextField source="body" />
+      <DisabledInput source="createdate" />
+      <DisabledInput source="lastupdate" />
     </SimpleShowLayout>
   </Show>
 );
 
-export const PostCreate = (props) => (
+export const CommentCreate = (props) => (
   <Create {...props} >
     <SimpleForm>
       <TextInput source="title" />
       <RichTextInput source="body" />
-      <ReferenceInput label="Comment" source="title" reference="comments">
-        <SelectInput optionText="title" />
-      </ReferenceInput>
     </SimpleForm>
   </Create>
 );
 
-export const PostEdit = (props) => (
+export const CommentEdit = (props) => (
   <Edit {...props}>
     <SimpleForm>
       <DisabledInput source="id" />
       <DisabledInput source="createdate" />
       <DisabledInput source="lastupdate" />
-      <ReferenceInput label="Comment" source="title" reference="comments">
-        <SelectInput optionText="title" />
-      </ReferenceInput>
       <TextInput source="title" />
       <RichTextInput source="body" />
       <SelectInput source="rating" choices={[
