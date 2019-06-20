@@ -7,19 +7,16 @@ import {
   FirebaseDataProvider,
   FirebaseAuthProvider
 } from "react-admin-firebase";
-
+import CommentIcon from '@material-ui/icons/Comment';
 import { firebaseConfig as config } from './FIREBASE_CONFIG';
-config.debug = true;
 
-const authProvider = FirebaseAuthProvider(config);
-const dataOptions = {
-  logging: true,
-  rootRef: 'root_collection/some_document'
-}
-const dataProvider = FirebaseDataProvider(config, dataOptions);
 const options = {
+  logging: true,
+  rootRef: 'root_collection/some_document',
   observe: ["posts"]
-};
+}
+const dataProvider = FirebaseDataProvider(config, options);
+const authProvider = FirebaseAuthProvider(config, options);
 const firebaseRealtime = FirebaseRealTimeSaga(dataProvider, options);
 
 class App extends React.Component {
@@ -39,6 +36,7 @@ class App extends React.Component {
         />
         <Resource
           name="comments"
+          icon={CommentIcon}
           list={CommentList}
           show={CommentShow}
           create={CommentCreate}
