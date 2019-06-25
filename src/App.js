@@ -9,18 +9,15 @@ import {
 } from "react-admin-firebase";
 import CommentIcon from '@material-ui/icons/Comment';
 
-import { firebaseConfig } from './FIREBASE_CONFIG';
+import { firebaseConfig as config } from './FIREBASE_CONFIG';
 
 const options = {
   logging: true,
-  rootRef: 'rootrefcollection/QQG2McwjR2Bohi9OwQzP',
-  // app: firebaseAppInstance
-  // watch: ['posts'];
-  // dontwatch: ['comments'];
+  rootRef: 'root_collection/some_document',
+  observe: ["posts"]
 }
-
-const authProvider = FirebaseAuthProvider(firebaseConfig, options);
-const dataProvider = FirebaseDataProvider(firebaseConfig, options);
+const dataProvider = FirebaseDataProvider(config, options);
+const authProvider = FirebaseAuthProvider(config, options);
 const firebaseRealtime = FirebaseRealTimeSaga(dataProvider, options);
 
 class App extends React.Component {
