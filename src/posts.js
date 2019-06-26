@@ -19,7 +19,9 @@ import {
   EditButton,
   DeleteButton,
   RichTextField,
-  SelectInput
+  SelectInput,
+  FileField,
+  FileInput
 } from "react-admin";
 import RichTextInput from "ra-input-rich-text";
 
@@ -54,6 +56,7 @@ export const PostShow = (props) => (
       <TextField source="createdate" />
       <TextField source="lastupdate" />
       <RichTextField source="body" />
+      <FileField source="file.src" title="file.title" />
     </SimpleShowLayout>
   </Show>
 );
@@ -66,6 +69,9 @@ export const PostCreate = (props) => (
       <ReferenceInput label="Comment" source="title" reference="comments">
         <SelectInput optionText="title" />
       </ReferenceInput>
+      <FileInput source="file" label="File" accept="application/pdf">
+        <FileField source="src" title="title" />
+      </FileInput>
     </SimpleForm>
   </Create>
 );
@@ -86,6 +92,9 @@ export const PostEdit = (props) => (
         { id: 2, name: 'Okay' },
         { id: 3, name: 'Bad' },
       ]} />
+      <FileInput source="file" label="File" accept="application/pdf">
+        <FileField source="src" title="title" />
+      </FileInput>
     </SimpleForm>
   </Edit>
 );
