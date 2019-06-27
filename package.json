@@ -10,6 +10,7 @@
     "react-scripts": "1.1.5",
     "redux-saga": "^0.16.0"
   },
+  "homepage": "https://benwinding.github.io/react-admin-firebase-demo/",
   "scripts": {
     "start": "BROWSER=none PORT=3333 react-scripts start",
     "deploy": "gh-pages -d build",
