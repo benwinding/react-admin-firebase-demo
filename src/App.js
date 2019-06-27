@@ -8,6 +8,7 @@ import {
   FirebaseAuthProvider
 } from "react-admin-firebase";
 import CommentIcon from '@material-ui/icons/Comment';
+import CustomLoginPage from './CustomLoginPage';
 
 import { firebaseConfig as config } from './FIREBASE_CONFIG';
 
@@ -24,6 +25,7 @@ class App extends React.Component {
   render() {
     return (
       <Admin
+        loginPage={CustomLoginPage} 
         customSagas={[firebaseRealtime]}
         dataProvider={dataProvider}
         authProvider={authProvider}
