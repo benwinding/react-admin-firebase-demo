@@ -5,7 +5,7 @@ Try the [demo here!](https://react-admin-firebase-1.web.app)
 
 ```
 username: test@example.com
-password: test@example.com
+password: password
 ```
 
 # Get started
