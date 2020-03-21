@@ -8,7 +8,6 @@ import {
   Create,
   Edit,
   Filter,
-  DisabledInput,
   SimpleShowLayout,
   SimpleForm,
   ReferenceField,
@@ -79,9 +78,9 @@ export const PostCreate = (props) => (
 export const PostEdit = (props) => (
   <Edit {...props}>
     <SimpleForm>
-      <DisabledInput source="id" />
-      <DisabledInput source="createdate" />
-      <DisabledInput source="lastupdate" />
+      <ReferenceInput source="id" options={{ disabled: true }} />
+      <ReferenceInput source="createdate" options={{ disabled: true }} />
+      <ReferenceInput source="lastupdate" options={{ disabled: true }} />
       <ReferenceInput label="Comment" source="title" reference="comments">
         <SelectInput optionText="title" />
       </ReferenceInput>

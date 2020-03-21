@@ -3,7 +3,6 @@ import { PostList, PostShow, PostCreate, PostEdit } from "./posts";
 import { CommentList, CommentShow, CommentCreate, CommentEdit } from "./comments";
 import { Admin, Resource } from "react-admin";
 import {
-  FirebaseRealTimeSaga,
   FirebaseDataProvider,
   FirebaseAuthProvider
 } from "react-admin-firebase";
@@ -19,14 +18,12 @@ const options = {
 }
 const dataProvider = FirebaseDataProvider(config, options);
 const authProvider = FirebaseAuthProvider(config, options);
-const firebaseRealtime = FirebaseRealTimeSaga(dataProvider, options);
 
 class App extends React.Component {
   render() {
     return (
       <Admin
         loginPage={CustomLoginPage} 
-        customSagas={[firebaseRealtime]}
         dataProvider={dataProvider}
         authProvider={authProvider}
       >
