@@ -13,8 +13,7 @@ import { firebaseConfig as config } from './FIREBASE_CONFIG';
 
 const options = {
   logging: true,
-  rootRef: 'root_collection/some_document',
-  watch: ["posts"]
+  rootRef: 'root_collection/some_document'
 }
 const dataProvider = FirebaseDataProvider(config, options);
 const authProvider = FirebaseAuthProvider(config, options);

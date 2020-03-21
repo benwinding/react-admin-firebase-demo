@@ -7,7 +7,8 @@ import {
   Show,
   Create,
   Edit,
-  ReferenceInput,
+  DateInput,
+  DateField,
   SimpleShowLayout,
   SimpleForm,
   TextField,
@@ -38,8 +39,8 @@ export const CommentShow = (props) => (
       <TextField source="id" />
       <TextField source="title" />
       <RichTextField source="body" />
-      <ReferenceInput source="createdate" options={{ disabled: true }} />
-      <ReferenceInput source="lastupdate" options={{ disabled: true }} />
+      <DateField source="createdate" options={{ disabled: true }} />
+      <DateField source="lastupdate" options={{ disabled: true }} />
     </SimpleShowLayout>
   </Show>
 );
@@ -56,9 +57,9 @@ export const CommentCreate = (props) => (
 export const CommentEdit = (props) => (
   <Edit {...props}>
     <SimpleForm>
-      <ReferenceInput source="id" options={{ disabled: true }} />
-      <ReferenceInput source="createdate" options={{ disabled: true }} />
-      <ReferenceInput source="lastupdate" options={{ disabled: true }} />
+      <TextInput source="id" options={{ disabled: true }} />
+      <DateInput source="createdate" options={{ disabled: true }} />
+      <DateInput source="lastupdate" options={{ disabled: true }} />
       <TextInput source="title" />
       <RichTextInput source="body" />
       <SelectInput source="rating" choices={[
