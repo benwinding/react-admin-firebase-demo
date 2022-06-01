@@ -2,7 +2,11 @@
 import * as React from "react";
 import axios from "axios";
 import qs from "qs";
+
 // tslint:disable-next-line:no-var-requires
+import { RevolvingDot } from "react-loader-spinner";
+// import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
+
 import {
   Datagrid,
   List,
@@ -95,6 +99,7 @@ export const VideoShow = (props) => (
 export const UploadVideo = (props) => {
   const [lang, setLang] = React.useState("English");
   const [selectedFile, setSelectedFile] = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
   const onFileChange = (event) => {
     // Update the state
     setSelectedFile(event.target.files[0]);
@@ -102,6 +107,10 @@ export const UploadVideo = (props) => {
 
   // On file upload (click the upload button)
   const onFileUpload = () => {
+    if (!selectedFile) {
+      alert("Please select a file");
+      return;
+    }
     // Create an object of formData
     const formData = new FormData();
 
@@ -113,7 +122,18 @@ export const UploadVideo = (props) => {
 
     // Request made to the backend api
     // Send formData object
-    axios.post("http://localhost:5005/uploadVideo", formData);
+    setLoading(true);
+    axios
+      .post("https://video-streaming-server.onrender.com/uploadVideo", formData)
+      .then((res) => {
+        setLoading(false);
+        alert("File uploaded successfully");
+      })
+      .catch((err) => {
+        alert(err);
+        console.log(err);
+        setLoading(false);
+      });
   };
 
   // File content to be displayed after
@@ -145,10 +165,10 @@ export const UploadVideo = (props) => {
       <h1>Visma Dashboard Videos</h1>
       <h3>File Upload using React!</h3>
       <select id="cars" name="cars" onChange={(e) => setLang(e.target.value)}>
-        <option value="english">English</option>
-        <option value="arabic">العربية</option>
-        <option value="francais">Français</option>
-        <option value="deutsch">Deutsch</option>
+        <option value="en">English</option>
+        <option value="ar">العربية</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
       </select>
 
       <div style={{ marginTop: 20 }}>
@@ -156,6 +176,22 @@ export const UploadVideo = (props) => {
         <button onClick={onFileUpload}>Upload!</button>
       </div>
       {fileData()}
+      {loading ? (
+        <div
+          style={{
+            color: "blue",
+            marginTop: 20,
+          }}
+        >
+          <RevolvingDot
+            height={"100"}
+            width="100"
+            color="blue"
+            ariaLabel="loading"
+          />
+          <span style={{ marginLeft: 10 }}>Uploading...</span>
+        </div>
+      ) : null}
     </div>
   );
 };

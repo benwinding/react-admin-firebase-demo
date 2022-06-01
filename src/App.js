@@ -1,6 +1,7 @@
 import * as React from "react";
 import { PostList, PostShow, PostCreate, PostEdit } from "./posts";
 import { VideoShow, VideoEdit, VideoList, UploadVideo } from "./videos";
+import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
 import {
   CommentList,
   CommentShow,
