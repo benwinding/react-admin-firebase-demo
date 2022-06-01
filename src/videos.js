@@ -60,7 +60,7 @@ export const VideoList = (props) => {
     });
     var config = {
       method: "post",
-      url: "http://localhost:5005/deleteVideo",
+      url: "https://video-streaming-server.onrender.com/deleteVideo",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
@@ -97,7 +97,7 @@ export const VideoShow = (props) => (
 );
 
 export const UploadVideo = (props) => {
-  const [lang, setLang] = React.useState("English");
+  const [lang, setLang] = React.useState("en");
   const [selectedFile, setSelectedFile] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const onFileChange = (event) => {
