@@ -1,6 +1,7 @@
 import * as React from "react";
 import { PostList, PostShow, PostCreate, PostEdit } from "./posts";
 import { VideoShow, VideoEdit, VideoList, UploadVideo } from "./videos";
+import { QuestionShow, QuestionList, QuestionCreate } from "./questions";
 import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
 import {
   CommentList,
@@ -48,6 +49,14 @@ class App extends React.Component {
           show={VideoShow}
           create={UploadVideo}
           edit={VideoEdit}
+        />
+        <Resource
+          name="questions"
+          icon={CommentIcon}
+          list={QuestionList}
+          show={QuestionShow}
+          create={QuestionCreate}
+          // edit={VideoEdit}
         />
       </Admin>
     );
