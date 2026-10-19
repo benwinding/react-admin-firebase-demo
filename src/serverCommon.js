@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useGetList } from "react-admin";
 
 export const apiUrl =
@@ -29,66 +30,28 @@ function getActTime(currentNode, name) {
   } else return null;
 }
 
+// v3's useGetList returned records keyed by id; the publish code relies on that shape
+function useGetMap(resource) {
+  const { data } = useGetList(resource, {
+    pagination: { page: 1, perPage: 500 },
+    sort: { field: "published_at", order: "DESC" },
+  });
+  return useMemo(
+    () => Object.fromEntries((data || []).map((r) => [r.id, r])),
+    [data]
+  );
+}
+
 export const useAllData = () => {
-  const actionResult = useGetList(
-    "actions",
-    { page: 1, perPage: 500 },
-    { field: "published_at", order: "DESC" }
-  );
-  const actions = actionResult.data;
-
-  const locationResult = useGetList(
-    "locations",
-    { page: 1, perPage: 500 },
-    { field: "published_at", order: "DESC" }
-  );
-  const locations = locationResult.data;
-
-  const beaconResult = useGetList(
-    "beacons",
-    { page: 1, perPage: 500 },
-    { field: "published_at", order: "DESC" }
-  );
-  const beacons = beaconResult.data;
-
-  const imageResult = useGetList(
-    "images",
-    { page: 1, perPage: 500 },
-    { field: "published_at", order: "DESC" }
-  );
-  const images = imageResult.data;
-
-  const soundResult = useGetList(
-    "sounds",
-    { page: 1, perPage: 500 },
-    { field: "published_at", order: "DESC" }
-  );
-  const sounds = soundResult.data;
-
-  const mapStyleResult = useGetList(
-    "mapStyles",
-    { page: 1, perPage: 500 },
-    { field: "published_at", order: "DESC" }
-  );
-  const mapStyles = mapStyleResult.data;
-  const broadcastResult = useGetList(
-    "broadcasts",
-    { page: 1, perPage: 500 },
-    { field: "published_at", order: "DESC" }
-  );
-  const broadcasts = broadcastResult.data;
-  const variableResult = useGetList(
-    "variables",
-    { page: 1, perPage: 500 },
-    { field: "published_at", order: "DESC" }
-  );
-  const variables = variableResult.data;
-  const peopleResult = useGetList(
-    "people",
-    { page: 1, perPage: 500 },
-    { field: "published_at", order: "DESC" }
-  );
-  const people = peopleResult.data;
+  const actions = useGetMap("actions");
+  const locations = useGetMap("locations");
+  const beacons = useGetMap("beacons");
+  const images = useGetMap("images");
+  const sounds = useGetMap("sounds");
+  const mapStyles = useGetMap("mapStyles");
+  const broadcasts = useGetMap("broadcasts");
+  const variables = useGetMap("variables");
+  const people = useGetMap("people");
   return {
     actions,
     locations,

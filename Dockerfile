@@ -1,14 +1,15 @@
-FROM node:18.6-bullseye-slim
+FROM node:22-bookworm-slim
 
 WORKDIR /app
 
-RUN apt-get update &&  apt-get install -y make gcc g++ python  && rm -rf /var/lib/apt/lists/*
+RUN apt-get update &&  apt-get install -y make gcc g++ python3  && rm -rf /var/lib/apt/lists/*
 
 ENV TZ=Asia/Taipei
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 COPY package.json /app/
 RUN yarn install --pure-lockfile && yarn cache clean
+COPY index.html vite.config.js /app/
 COPY src /app/src
 COPY public /app/public
 

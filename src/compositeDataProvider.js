@@ -1,14 +1,27 @@
 import { firebaseConfig as config } from "./FIREBASE_CONFIG";
 import { FirebaseDataProvider } from "react-admin-firebase";
+import { getCurrentScenario } from "./currentScenario";
 
 class CompositeDataProvider {
-  constructor(dataProviders) {
+  constructor(adminProvider, createScenarioProvider) {
     this.time = Date.now();
-    this.dataProviders = dataProviders;
+    this.adminProvider = adminProvider;
+    this.createScenarioProvider = createScenarioProvider;
+    this.scenarioProvider = null;
+  }
+
+  // the scenario provider follows the current scenario stored in localStorage
+  _getDataProviders() {
+    const scenario = getCurrentScenario() || "test";
+    if (!this.scenarioProvider || this.scenarioProvider.name !== scenario) {
+      console.log("setting data provider", scenario);
+      this.scenarioProvider = this.createScenarioProvider(scenario);
+    }
+    return [this.adminProvider, this.scenarioProvider];
   }
 
   _delegate(name, resource, params) {
-    const { dataProvider } = this.dataProviders.find((dp) =>
+    const { dataProvider } = this._getDataProviders().find((dp) =>
       dp.resources.includes(resource)
     );
     return dataProvider[name](resource, params);

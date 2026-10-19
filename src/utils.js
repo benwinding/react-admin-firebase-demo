@@ -1,6 +1,6 @@
-function getRecordField(props, field) {
-  if (props.record) {
-    return props.record[field];
+function getRecordField(record, field) {
+  if (record) {
+    return record[field];
   } else {
     console.trace();
     alert("連線逾期。");

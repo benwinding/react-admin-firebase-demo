@@ -26,4 +26,8 @@ export const firebaseConfig = {
 
 Don't forget to add the `export` infront of the configuration that Firebase gives you!
 
-Then just run `npm run start`
+Then just run `npm install` and `npm start` (Node 20.19+ or 22.12+ is required; the dev server listens on port 4444).
+
+`npm run build` writes the production bundle to `build/`.
+
+The app uses react-admin 5, React 18 and Vite.
