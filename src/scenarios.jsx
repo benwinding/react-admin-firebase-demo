@@ -45,7 +45,11 @@ import { useAllData, getActions, apiUrl } from "./serverCommon";
 import { getPrevId } from "./actionCommon";
 import { isSuperUser, getAuthUid } from "./App";
 import ImageReferenceInput from "./ImageReferenceInput";
-import { setCurrentScenario, useCurrentScenario } from "./currentScenario";
+import {
+  scenarioResources,
+  setCurrentScenario,
+  useCurrentScenario,
+} from "./currentScenario";
 
 import { buildGPX, BaseBuilder } from "gpx-builder";
 const { Point, Track, Segment } = BaseBuilder.MODELS;
@@ -60,9 +64,6 @@ function useIsCurrentScenario(record) {
   return !!record && currentScenario === record.id;
 }
 
-// resources stored under a scenario; scenarios and categories are shared
-const adminResources = ["scenarios", "categories"];
-
 function UseButton(props) {
   const record = useRecordContext(props);
   const active = useIsCurrentScenario(record);
@@ -75,7 +76,7 @@ function UseButton(props) {
     );
     // drop cached records of the previous scenario
     queryClient.removeQueries({
-      predicate: (query) => !adminResources.includes(query.queryKey[0]),
+      predicate: (query) => scenarioResources.includes(query.queryKey[0]),
     });
     refresh();
   }

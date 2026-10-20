@@ -18,6 +18,7 @@ import {
 import { getDeleteButton } from "./deleteResource";
 import { CoordinateInput, CoordinateField } from "./coordinates";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 
 const locationFilters = [
   <TextInput label="Search" source="name" alwaysOn key="name" />,
@@ -27,7 +28,7 @@ const Title = () => {
   const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》地點
+      《{getCurrentScenarioName()}》地點
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
@@ -39,7 +40,7 @@ const LocationDelete = (props) => {
 };
 
 export const LocationList = () => {
-  if (localStorage.getItem("scenario")) {
+  if (getCurrentScenario()) {
     return (
       <List
         title={<Title />}

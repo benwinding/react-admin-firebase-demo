@@ -18,6 +18,7 @@ import {
 
 import { MyImageField } from "./MyImageField";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 import { getDeleteButton } from "./deleteResource";
 
 const imageFilters = [
@@ -28,14 +29,14 @@ const Title = () => {
   const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》圖片
+      《{getCurrentScenarioName()}》圖片
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
 };
 
 export const ImageList = () => {
-  if (localStorage.getItem("scenario")) {
+  if (getCurrentScenario()) {
     return (
       <List title={<Title />} filters={imageFilters}>
         <Datagrid rowClick={false}>

@@ -1,6 +1,7 @@
 // Browser version of xid-js (which needs Node's os, crypto and Buffer):
 // 12 bytes = 4 bytes time, 5 random bytes (machine id + pid), 3 bytes counter,
-// encoded as 20 base32 characters with the same alphabet.
+// encoded as 20 base32 characters. The alphabet is the one xid-js used
+// (Crockford style, not Go xid's base32hex), so new ids look like existing ones.
 const alphabet = "0123456789abcdefghjkmnpqrstvwxyz";
 
 const random = crypto.getRandomValues(new Uint8Array(8));

@@ -16,6 +16,7 @@ import {
 } from "react-admin";
 import { getDeleteButton } from "./deleteResource";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 
 const beaconFilters = [
   <TextInput label="Search" source="name" alwaysOn key="name" />,
@@ -25,7 +26,7 @@ const Title = () => {
   const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》Beacon
+      《{getCurrentScenarioName()}》Beacon
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
@@ -37,7 +38,7 @@ const BeaconDelete = (props) => {
 };
 
 export const BeaconList = () => {
-  if (localStorage.getItem("scenario"))
+  if (getCurrentScenario())
     return (
       <List title={<Title />} filters={beaconFilters}>
         <Datagrid rowClick={false}>

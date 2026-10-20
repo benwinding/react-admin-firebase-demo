@@ -19,6 +19,7 @@ import {
 import { getDeleteButton } from "./deleteResource";
 
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 const soundFilters = [
   <TextInput label="Search" source="name" alwaysOn key="name" />,
 ];
@@ -27,7 +28,7 @@ const Title = () => {
   const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》聲音
+      《{getCurrentScenarioName()}》聲音
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
@@ -39,7 +40,7 @@ const SoundDelete = (props) => {
 };
 
 export const SoundList = () => {
-  if (localStorage.getItem("scenario")) {
+  if (getCurrentScenario()) {
     return (
       <List
         title={<Title />}

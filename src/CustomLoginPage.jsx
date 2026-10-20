@@ -5,6 +5,7 @@ import StyledFirebaseAuth from "react-firebaseui/StyledFirebaseAuth";
 import firebase from "firebase/compat/app";
 import "firebase/compat/auth";
 import { firebaseConfig } from "./FIREBASE_CONFIG";
+import { clearCurrentScenario } from "./currentScenario";
 
 // firebaseui needs the compat API; this wraps the app react-admin-firebase created
 firebase.initializeApp(firebaseConfig);
@@ -48,8 +49,7 @@ const CustomLoginForm = () => {
 const CustomLoginPage = () => {
   React.useEffect(() => {
     localStorage.removeItem("uid");
-    localStorage.removeItem("scenario");
-    localStorage.removeItem("scenarioName");
+    clearCurrentScenario();
     console.log("effect happened");
   });
   return (

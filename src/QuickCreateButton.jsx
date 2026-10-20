@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useFormContext } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
+import pick from "lodash/pick";
 import { Button, CreateBase, Form, SaveButton } from "react-admin";
 import IconContentAdd from "@mui/icons-material/Add";
 import IconCancel from "@mui/icons-material/Cancel";
@@ -10,16 +12,19 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 
 // Creates a record in a dialog and selects it in the parent form's `source` input.
+// Only `fields` are saved: react-admin also merges a record passed in the page's
+// location state (e.g. `prevs` from 下一步) into every form, this one included.
 function QuickCreateButton({
   resource,
   title,
   ariaLabel,
   source,
-  onChange,
+  fields,
   children,
 }) {
   const [showDialog, setShowDialog] = useState(false);
   const { setValue } = useFormContext();
+  const queryClient = useQueryClient();
 
   const handleClick = () => {
     setShowDialog(true);
@@ -31,10 +36,9 @@ function QuickCreateButton({
 
   const onSuccess = (data) => {
     setShowDialog(false);
-    // Update the parent form to target the newly created record
-    // Updating the ReferenceInput key will force it to reload the available records
+    // reload the reference choices, then select the newly created record
+    queryClient.invalidateQueries({ queryKey: [resource] });
     setValue(source, data.id, { shouldDirty: true });
-    onChange();
   };
 
   return (
@@ -55,6 +59,7 @@ function QuickCreateButton({
           resource={resource}
           redirect={false}
           mutationOptions={{ onSuccess }}
+          transform={(data) => pick(data, fields)}
         >
           <Form>
             <DialogContent>{children}</DialogContent>

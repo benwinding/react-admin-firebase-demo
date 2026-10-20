@@ -12,7 +12,7 @@ import {
   number,
   CheckboxGroupInput,
   Button,
-  useGetMany,
+  useGetOne,
 } from "react-admin";
 
 import "./modalImage.css";
@@ -713,11 +713,16 @@ const PopupInput = ({ formData, enableDelay }) => {
       {enableDelay && addDelay(formData, "popup")}
     </>
   );
-  const pictures = (formData.pictures || []).filter((x) => x);
-  const imageData =
-    useGetMany("images", {
-      ids: pictures.map((p) => p.pictureId).filter((id) => id),
-    }).data || [];
+  // preview the first picture the author configured
+  const firstPictureId = (formData.pictures || []).find(
+    (p) => p && p.pictureId
+  )?.pictureId;
+  const { data: firstImage } = useGetOne(
+    "images",
+    { id: firstPictureId },
+    { enabled: !!firstPictureId }
+  );
+  const firstImageSrc = firstPictureId && firstImage?.image?.src;
 
   const previewPane = (
     <>
@@ -758,8 +763,8 @@ const PopupInput = ({ formData, enableDelay }) => {
                     alignItems: "center",
                   }}
                 >
-                  {imageData.length > 0 && (
-                    <img src={imageData[0].image.src} style={{ width: 300 }} />
+                  {firstImageSrc && (
+                    <img src={firstImageSrc} style={{ width: 300 }} />
                   )}
                 </div>
                 <div
@@ -949,8 +954,8 @@ const PopupInput = ({ formData, enableDelay }) => {
                     alignItems: "center",
                   }}
                 >
-                  {imageData.length > 0 && (
-                    <img src={imageData[0].image.src} style={{ width: 280 }} />
+                  {firstImageSrc && (
+                    <img src={firstImageSrc} style={{ width: 280 }} />
                   )}
                 </div>
                 <div

@@ -15,6 +15,7 @@ import { getDeleteButton } from "./deleteResource";
 import ImageReferenceInput from "./ImageReferenceInput";
 
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 const peopleFilters = [
   <TextInput label="Search" source="name" alwaysOn key="name" />,
 ];
@@ -23,7 +24,7 @@ const Title = () => {
   const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》朋友
+      《{getCurrentScenarioName()}》朋友
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
@@ -35,7 +36,7 @@ const PeopleDelete = (props) => {
 };
 
 export const PeopleList = () => {
-  if (localStorage.getItem("scenario")) {
+  if (getCurrentScenario()) {
     return (
       <List
         title={<Title />}

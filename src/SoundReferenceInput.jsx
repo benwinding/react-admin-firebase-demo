@@ -1,48 +1,30 @@
-import React, { useState, useCallback } from "react";
-import { useWatch } from "react-hook-form";
-import {
-  ReferenceInput,
-  AutocompleteInput,
-  FileField,
-  ReferenceField,
-  useWrappedSource,
-} from "react-admin";
-import { Box } from "@mui/material";
+import React from "react";
+import { required, TextInput, FileInput, FileField } from "react-admin";
 
-import SoundQuickCreateButton from "./SoundQuickCreateButton";
-import { referenceRowSx } from "./LocationReferenceInput";
+import QuickCreateButton from "./QuickCreateButton";
+import ReferenceWithQuickCreate from "./ReferenceWithQuickCreate";
 
-const SoundReferenceInput = ({ label, validate, ...props }) => {
-  const [version, setVersion] = useState(0);
-  const handleChange = useCallback(() => setVersion(version + 1), [version]);
-  const finalSource = useWrappedSource(props.source);
-  const value = useWatch({ name: finalSource });
+const SoundQuickCreateButton = ({ source }) => (
+  <QuickCreateButton
+    resource="sounds"
+    title="上傳音檔"
+    ariaLabel="Upload Sound"
+    source={source}
+    fields={["name", "sound"]}
+  >
+    <TextInput label="名稱" source="name" validate={required()} />
+    <FileInput label="音檔" source="sound" validate={required()}>
+      <FileField source="src" title="name" />
+    </FileInput>
+  </QuickCreateButton>
+);
 
-  return (
-    <>
-      <Box sx={referenceRowSx}>
-        <ReferenceInput key={version} {...props}>
-          <AutocompleteInput
-            optionText="name"
-            label={label}
-            validate={validate}
-          />
-        </ReferenceInput>
-        <SoundQuickCreateButton onChange={handleChange} source={finalSource} />
-      </Box>
-      <br />
-      <ReferenceField
-        key={version}
-        label="sound"
-        record={{ id: finalSource, value }}
-        source="value"
-        reference="sounds"
-      >
-        <FileField title={"音檔"} source="sound.src" />
-      </ReferenceField>
-      <br />
-    </>
-  );
-};
+const SoundReferenceInput = (props) => (
+  <ReferenceWithQuickCreate
+    {...props}
+    quickCreate={SoundQuickCreateButton}
+    preview={<FileField title={"音檔"} source="sound.src" />}
+  />
+);
 
 export default SoundReferenceInput;

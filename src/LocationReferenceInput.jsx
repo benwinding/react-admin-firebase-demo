@@ -1,45 +1,29 @@
-import React, { useState, useCallback } from "react";
-import {
-  ReferenceInput,
-  AutocompleteInput,
-  useWrappedSource,
-} from "react-admin";
-import { Box } from "@mui/material";
+import React from "react";
+import { required, TextInput } from "react-admin";
 
-import LocationQuickCreateButton from "./LocationQuickCreateButton";
+import QuickCreateButton from "./QuickCreateButton";
+import ReferenceWithQuickCreate from "./ReferenceWithQuickCreate";
+import { CoordinateInput } from "./coordinates";
 
-export const referenceRowSx = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyItems: "flex-start",
-  justifyContent: "flex-start",
-  flexDirection: "row",
-};
+const LocationQuickCreateButton = ({ source }) => (
+  <QuickCreateButton
+    resource="locations"
+    title="建立地點"
+    ariaLabel="Create location"
+    source={source}
+    fields={["name", "latLng", "lat", "lon", "description"]}
+  >
+    <TextInput label="名稱" validate={required()} source="name" fullWidth />
+    <CoordinateInput />
+    <TextInput label="說明" source="description" fullWidth />
+  </QuickCreateButton>
+);
 
-// label and validate belong to the inner input since react-admin v4
-const LocationReferenceInput = ({ label, validate, ...props }) => {
-  const [version, setVersion] = useState(0);
-  const handleChange = useCallback(() => setVersion(version + 1), [version]);
-  const finalSource = useWrappedSource(props.source);
-  return (
-    <div>
-      <Box sx={referenceRowSx}>
-        <ReferenceInput key={version} {...props}>
-          <AutocompleteInput
-            optionText="name"
-            label={label}
-            validate={validate}
-          />
-        </ReferenceInput>
-
-        <LocationQuickCreateButton
-          onChange={handleChange}
-          source={finalSource}
-        />
-      </Box>
-      <br />
-    </div>
-  );
-};
+const LocationReferenceInput = (props) => (
+  <ReferenceWithQuickCreate
+    {...props}
+    quickCreate={LocationQuickCreateButton}
+  />
+);
 
 export default LocationReferenceInput;

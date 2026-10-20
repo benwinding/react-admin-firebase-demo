@@ -29,6 +29,7 @@ import ReplyIcon from "@mui/icons-material/Reply";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import HourglassBottomIcon from "@mui/icons-material/HourglassEmpty";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 import { apiUrl } from "./serverCommon";
 
 const conditionTypes = [
@@ -59,7 +60,7 @@ const Title = () => {
   const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》廣播
+      《{getCurrentScenarioName()}》廣播
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
@@ -70,7 +71,7 @@ const broadcastFilters = [
 ];
 
 export const BroadcastList = () => {
-  if (localStorage.getItem("scenario")) {
+  if (getCurrentScenario()) {
     return (
       <List title={<Title />} perPage={100} filters={broadcastFilters}>
         <Datagrid rowClick={false}>
@@ -95,7 +96,7 @@ const InputForm = (props) => {
           return (
             <>
               {props.showid === "true" ? (
-                <TextInput source="id" options={{ readOnly: true }} />
+                <TextInput source="id" readOnly />
               ) : (
                 <></>
               )}
@@ -231,7 +232,7 @@ function SendButton(props) {
     setOpen(false);
     setLoading(true);
     const condition = getCondition(record, data);
-    const scenario = localStorage.getItem("scenario");
+    const scenario = getCurrentScenario();
     const actions = getActions(record, data, condition).map((a) => ({
       ...a,
       session: {

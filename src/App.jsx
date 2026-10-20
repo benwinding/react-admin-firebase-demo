@@ -26,6 +26,7 @@ import { Box } from "@mui/material";
 
 import CustomLoginPage from "./CustomLoginPage";
 import CompositeDataProvider from "./compositeDataProvider";
+import { scenarioResources } from "./currentScenario";
 
 import { firebaseConfig as config } from "./FIREBASE_CONFIG";
 import { apiUrl } from "./serverCommon";
@@ -157,18 +158,7 @@ function createDataProvider(scenario) {
           : getActionList();
       },
     },
-    resources: [
-      "locations",
-      "actions",
-      "nodes",
-      "beacons",
-      "images",
-      "sounds",
-      "mapStyles",
-      "broadcasts",
-      "variables",
-      "people",
-    ],
+    resources: scenarioResources,
     name: scenario,
   };
 }

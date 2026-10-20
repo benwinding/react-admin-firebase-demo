@@ -62,6 +62,7 @@ import {
 
 import { getRecordField } from "./utils";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 
 const actionFilters = [
   <TextInput label="Search" source="name" alwaysOn key="name" />,
@@ -71,7 +72,7 @@ const Title = () => {
   const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》動作
+      《{getCurrentScenarioName()}》動作
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
@@ -82,7 +83,7 @@ const getRowIndex = (record) => {
 };
 
 export const ActionList = () => {
-  if (localStorage.getItem("scenario"))
+  if (getCurrentScenario())
     return (
       <List title={<Title />} perPage={100} filters={actionFilters}>
         <Datagrid rowClick={false}>

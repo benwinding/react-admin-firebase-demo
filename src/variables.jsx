@@ -18,6 +18,7 @@ import {
   useRecordContext,
 } from "react-admin";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 import { getDeleteButton } from "./deleteResource";
 
 const variableFilters = [
@@ -28,7 +29,7 @@ const Title = () => {
   const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》變數
+      《{getCurrentScenarioName()}》變數
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
@@ -40,7 +41,7 @@ const VariableDelete = (props) => {
 };
 
 export const VariableList = () => {
-  if (localStorage.getItem("scenario"))
+  if (getCurrentScenario())
     return (
       <List title={<Title />} filters={variableFilters}>
         <Datagrid rowClick={false}>
