@@ -31,8 +31,7 @@ const Title = () => {
 };
 
 const PeopleDelete = (props) => {
-  const paths = ["people"];
-  return getDeleteButton(props, "people", "朋友", paths.join(","));
+  return getDeleteButton(props, "people", "朋友", { actions: ["sender"] });
 };
 
 export const PeopleList = () => {

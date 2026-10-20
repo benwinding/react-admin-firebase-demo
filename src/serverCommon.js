@@ -30,29 +30,45 @@ function getActTime(currentNode, name) {
   } else return null;
 }
 
+// large enough to read whole collections; publishing a partial scenario
+// would overwrite the live one
+const allRecords = 10000;
+
 // v3's useGetList returned records keyed by id; the publish code relies on that shape
 function useGetMap(resource) {
-  const { data } = useGetList(resource, {
-    pagination: { page: 1, perPage: 500 },
+  const { data, isSuccess } = useGetList(resource, {
+    pagination: { page: 1, perPage: allRecords },
     sort: { field: "published_at", order: "DESC" },
   });
-  return useMemo(
+  const map = useMemo(
     () => Object.fromEntries((data || []).map((r) => [r.id, r])),
     [data]
   );
+  return [map, isSuccess];
 }
 
 export const useAllData = () => {
-  const actions = useGetMap("actions");
-  const locations = useGetMap("locations");
-  const beacons = useGetMap("beacons");
-  const images = useGetMap("images");
-  const sounds = useGetMap("sounds");
-  const mapStyles = useGetMap("mapStyles");
-  const broadcasts = useGetMap("broadcasts");
-  const variables = useGetMap("variables");
-  const people = useGetMap("people");
+  const [actions, actionsLoaded] = useGetMap("actions");
+  const [locations, locationsLoaded] = useGetMap("locations");
+  const [beacons, beaconsLoaded] = useGetMap("beacons");
+  const [images, imagesLoaded] = useGetMap("images");
+  const [sounds, soundsLoaded] = useGetMap("sounds");
+  const [mapStyles, mapStylesLoaded] = useGetMap("mapStyles");
+  const [broadcasts, broadcastsLoaded] = useGetMap("broadcasts");
+  const [variables, variablesLoaded] = useGetMap("variables");
+  const [people, peopleLoaded] = useGetMap("people");
   return {
+    // false until every collection has loaded
+    loaded:
+      actionsLoaded &&
+      locationsLoaded &&
+      beaconsLoaded &&
+      imagesLoaded &&
+      soundsLoaded &&
+      mapStylesLoaded &&
+      broadcastsLoaded &&
+      variablesLoaded &&
+      peopleLoaded,
     actions,
     locations,
     beacons,
@@ -72,7 +88,7 @@ export const getActions = (currentNode, data, condition) => {
   //   console.log('bad sound:', currentNode.name);
   // }
   const sender = currentNode.sender || "ghost";
-  if (currentNode.hasSound && sounds[currentNode.soundId]) {
+  if (currentNode.hasSound) {
     const sound = sounds[currentNode.soundId];
     if (!sound) {
       throw `聲音不存在: ${currentNode.name}`;
@@ -251,7 +267,7 @@ export const getActions = (currentNode, data, condition) => {
         condition: condition,
       },
       delay: currentNode.markerRemovalDelay,
-      time: getActTime(currentNode, "marker"),
+      time: getActTime(currentNode, "markerRemoval"),
       description: currentNode.name,
     };
     ret.push(markerRemovalAction);
@@ -274,8 +290,14 @@ export const getActions = (currentNode, data, condition) => {
     };
     ret.push(popupDismissalAction);
   }
-  if (currentNode.hasMapStyle && mapStyles[currentNode.mapStyle]) {
+  if (
+    currentNode.hasMapStyle &&
+    (currentNode.satellite || currentNode.mapStyle)
+  ) {
     const mapStyle = mapStyles[currentNode.mapStyle];
+    if (!currentNode.satellite && !mapStyle) {
+      throw `地圖樣式不存在: ${currentNode.name}`;
+    }
     const mapStyleAction = {
       id: currentNode.id + "-map-style",
       receiver: "?u",
@@ -346,8 +368,8 @@ export const getActions = (currentNode, data, condition) => {
         },
         condition: condition,
       },
-      delay: currentNode.backgroundDelay,
-      time: getActTime(currentNode, "background"),
+      delay: currentNode.buttonStyleDelay,
+      time: getActTime(currentNode, "buttonStyle"),
       description: currentNode.name,
     };
     ret.push(buttonStyleAction);
@@ -365,7 +387,7 @@ export const getActions = (currentNode, data, condition) => {
         condition: condition,
       },
       delay: currentNode.popupStyleDelay,
-      time: getActTime(currentNode, "popStyle"),
+      time: getActTime(currentNode, "popupStyle"),
       description: currentNode.name,
     };
     ret.push(popupStyleAction);
@@ -467,7 +489,7 @@ export const getActions = (currentNode, data, condition) => {
         condition: condition,
       },
       delay: currentNode.guideImageRemovalDelay,
-      time: getActTime(currentNode, "guideImage"),
+      time: getActTime(currentNode, "guideImageRemoval"),
       description: currentNode.name,
     };
     ret.push(guideImageRemovalAction);

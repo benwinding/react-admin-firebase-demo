@@ -1,4 +1,5 @@
 import { getRecordField } from "./utils";
+import { getCurrentScenario } from "./currentScenario";
 import {
   Button,
   Confirm,
@@ -10,6 +11,16 @@ import {
 import * as React from "react";
 import { useState } from "react";
 
+const resourceLabels = {
+  actions: "動作",
+  broadcasts: "廣播",
+  people: "朋友",
+  scenarios: "劇本",
+};
+
+// Deletes the record unless another record still refers to it.
+// `references` maps each referencing resource to the paths that may hold
+// this record's id, e.g. { actions: ["soundId"], broadcasts: ["soundId"] }.
 export function getDeleteButton(props, resource, resourceName, references) {
   const record = useRecordContext(props);
   const notify = useNotify();
@@ -19,38 +30,43 @@ export function getDeleteButton(props, resource, resourceName, references) {
   const handleDialogClose = () => setOpen(false);
   const id = getRecordField(record, "id");
   const dataProvider = useDataProvider();
-  async function getActionNames(actions, path) {
-    const fields = path.split(".");
-    function findValues(action) {
-      return fields.reduce((a, f) => {
-        const arr = a ? (Array.isArray(a) ? a : [a]) : [];
-        if (a) {
-          const level = arr.flatMap((e) => {
-            if (e && e[f]) {
-              return e[f];
-            } else {
-              return [];
-            }
-          });
-          return level;
-        }
-      }, action);
-    }
-    const result = actions.filter((a) => findValues(a).includes(id));
-    return result.map((r) => r.name);
+  // values at a dotted path; arrays along the way are flattened, so
+  // "prevs.beacon" finds the beacon of every previous step
+  function findValues(record, path) {
+    return path
+      .split(".")
+      .reduce(
+        (values, field) =>
+          values.flatMap((v) => (v && v[field] ? v[field] : [])),
+        [record]
+      );
   }
-  async function getUsers() {
-    const actionResult = await dataProvider.getList("actions", {
-      pagination: { page: 1, perPage: 500 },
+  async function getRecords(referencingResource) {
+    if (referencingResource === "scenarios") {
+      // the current scenario is the only one that can use this scenario's records
+      const result = await dataProvider.getOne("scenarios", {
+        id: getCurrentScenario(),
+      });
+      return [result.data];
+    }
+    const result = await dataProvider.getList(referencingResource, {
+      pagination: { page: 1, perPage: 100000 },
       sort: { field: "published_at", order: "DESC" },
+      filter: {},
     });
-    const actions = Object.values(actionResult.data);
-    return Promise.all(
-      references.split(",").flatMap((path) => {
-        const ret = getActionNames(actions, path);
-        return ret;
+    return result.data;
+  }
+  // names of the records that still use this one, e.g. 「動作：start」
+  async function getUsers() {
+    const users = await Promise.all(
+      Object.entries(references).map(async ([referencingResource, paths]) => {
+        const records = await getRecords(referencingResource);
+        return records
+          .filter((r) => paths.some((path) => findValues(r, path).includes(id)))
+          .map((r) => `${resourceLabels[referencingResource]}：${r.name}`);
       })
     );
+    return users.flat();
   }
   const name = getRecordField(record, "name");
   const refresh = useRefresh();
@@ -58,17 +74,15 @@ export function getDeleteButton(props, resource, resourceName, references) {
     setOpen(false);
     setLoading(true);
     try {
-      const actionNamePromise = await getUsers();
-      const actionNames = Array.from(new Set(actionNamePromise.flat()));
-      if (!actionNames || actionNames.length === 0) {
+      const users = await getUsers();
+      if (users.length === 0) {
         await dataProvider.delete(resource, { id, previousData: record });
         notify(`成功刪除${resourceName}: ${name}`, { type: "success" });
       } else {
-        const msg = `無法刪除${resourceName}: ${name}，因仍被以下動作使用:`;
-        const actionString = actionNames
-          .filter((a) => a)
-          .map((a) => `「${a}」`);
-        notify(`${msg}${actionString}`, { type: "error" });
+        const msg = `無法刪除${resourceName}: ${name}，因仍被以下項目使用:`;
+        notify(`${msg}${users.map((u) => `「${u}」`).join("")}`, {
+          type: "error",
+        });
       }
     } catch (e) {
       notify("刪除失敗；原因 =" + e, { type: "error" });

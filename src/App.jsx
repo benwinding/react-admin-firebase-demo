@@ -27,6 +27,7 @@ import { Box } from "@mui/material";
 import CustomLoginPage from "./CustomLoginPage";
 import CompositeDataProvider from "./compositeDataProvider";
 import { scenarioResources } from "./currentScenario";
+import { withoutDisplayFields } from "./utils";
 
 import { firebaseConfig as config } from "./FIREBASE_CONFIG";
 import { apiUrl } from "./serverCommon";
@@ -111,6 +112,17 @@ function createDataProvider(scenario) {
   return {
     dataProvider: {
       ...baseProvider,
+      // getList below adds display-only fields to the records
+      create: (resource, params) =>
+        baseProvider.create(resource, {
+          ...params,
+          data: withoutDisplayFields(params.data),
+        }),
+      update: (resource, params) =>
+        baseProvider.update(resource, {
+          ...params,
+          data: withoutDisplayFields(params.data),
+        }),
       getList: (resource, params) => {
         function getActionList() {
           const newParams = JSON.parse(JSON.stringify(params));

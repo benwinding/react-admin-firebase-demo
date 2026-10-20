@@ -35,8 +35,16 @@ const Title = () => {
 };
 
 const LocationDelete = (props) => {
-  const paths = ["soundCenterId", "locationId", "geofenceCenter"];
-  return getDeleteButton(props, "locations", "地點", paths.join(","));
+  const paths = [
+    "soundCenterId",
+    "locationId",
+    "geofenceCenter",
+    "prevs.geofenceCenter",
+  ];
+  return getDeleteButton(props, "locations", "地點", {
+    actions: paths,
+    broadcasts: paths,
+  });
 };
 
 export const LocationList = () => {

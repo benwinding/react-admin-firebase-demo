@@ -225,6 +225,20 @@ export function getMainType(action) {
     ? "guide-image-removal"
     : action.hasSound && action.soundType == "BACKGROUND"
     ? "sound"
+    : action.hasButtonStyle
+    ? "button-style"
+    : // the remaining content types must match the action ids in getActions,
+    // otherwise the next step waits for an action that is never sent
+    action.hasPopupStyle
+    ? "popup-style"
+    : action.hasSilence
+    ? "silence"
+    : action.hasVariableUpdate
+    ? "variable-update"
+    : action.endgame
+    ? "endgame"
+    : action.hasSound
+    ? "sound"
     : "button-style";
 }
 
@@ -260,6 +274,12 @@ export function getPrevDesc(action) {
       return "按鈕樣式改變";
     case "popup-style":
       return "圖文樣式改變";
+    case "silence":
+      return "聲音停止";
+    case "variable-update":
+      return "變數更新";
+    case "endgame":
+      return "活動結束";
     default:
       return "動作執行完畢";
   }

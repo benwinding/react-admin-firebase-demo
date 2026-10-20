@@ -34,7 +34,10 @@ const Title = () => {
 
 const MapStyleDelete = (props) => {
   const paths = ["mapStyle"];
-  return getDeleteButton(props, "mapStyles", "地圖樣式", paths.join(","));
+  return getDeleteButton(props, "mapStyles", "地圖樣式", {
+    actions: paths,
+    broadcasts: paths,
+  });
 };
 
 export const MapStyleList = () => {

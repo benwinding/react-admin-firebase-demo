@@ -10,3 +10,15 @@ function getRecordField(record, field) {
 }
 
 export { getRecordField };
+
+// Fields the list views add to records for display only (see App.jsx); they
+// must not be written back to Firestore.
+const displayOnlyFields = ["rowIndex", "sorted", "children"];
+
+function withoutDisplayFields(data) {
+  const copy = { ...data };
+  displayOnlyFields.forEach((field) => delete copy[field]);
+  return copy;
+}
+
+export { withoutDisplayFields };

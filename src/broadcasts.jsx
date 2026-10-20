@@ -228,62 +228,67 @@ function SendButton(props) {
   const data = useAllData();
   const handleDialogClose = () => setOpen(false);
   const notify = useNotify();
-  function handleConfirm() {
+  async function handleConfirm() {
     setOpen(false);
     setLoading(true);
-    const condition = getCondition(record, data);
-    const scenario = getCurrentScenario();
-    const actions = getActions(record, data, condition).map((a) => ({
-      ...a,
-      session: {
-        scenario: scenario,
-        chapter: "",
-      },
-    }));
-    const messages = actions.map((a) => {
-      return {
-        payload: {
-          type: "PERFORM_DIRECTLY",
-          action: a,
+    try {
+      const condition = getCondition(record, data);
+      const scenario = getCurrentScenario();
+      const actions = getActions(record, data, condition).map((a) => ({
+        ...a,
+        session: {
+          scenario: scenario,
+          chapter: "",
         },
-        sender: "ghost",
-        receiver: "?u",
-        id: `perform-${a.id}`,
-        scenarioId: scenario,
-      };
-    });
-    const url = `${apiUrl}/v1/broadcast`;
-    Promise.all(
-      messages.map((m) => {
-        fetch(url, {
-          method: "POST",
-          body: JSON.stringify(m),
-          headers: {
-            "content-type": "application/json",
+      }));
+      const messages = actions.map((a) => {
+        return {
+          payload: {
+            type: "PERFORM_DIRECTLY",
+            action: a,
           },
-        }).then((response) => {
-          if (response.ok) {
-            notify(`成功傳送「${getRecordField(record, "name")}」`, {
-              type: "success",
-            });
-          } else {
-            notify(
-              "傳送失敗；原因 =" +
-                JSON.stringify(response.body) +
-                " " +
-                response.status,
-              { type: "error" }
-            );
-          }
+          sender: "ghost",
+          receiver: "?u",
+          id: `perform-${a.id}`,
+          scenarioId: scenario,
+        };
+      });
+      const url = `${apiUrl}/v1/broadcast`;
+      const responses = await Promise.all(
+        messages.map((m) =>
+          fetch(url, {
+            method: "POST",
+            body: JSON.stringify(m),
+            headers: {
+              "content-type": "application/json",
+            },
+          })
+        )
+      );
+      const failed = responses.filter((response) => !response.ok);
+      if (failed.length === 0) {
+        notify(`成功傳送「${getRecordField(record, "name")}」`, {
+          type: "success",
         });
-      })
-    ).finally(() => {
+      } else {
+        notify("傳送失敗；原因 = " + failed.map((r) => r.status).join(", "), {
+          type: "error",
+        });
+      }
+    } catch (e) {
+      console.error("failed to send", e);
+      notify("傳送失敗；原因 = " + e, { type: "error" });
+    } finally {
       setLoading(false);
-    });
+    }
   }
   return (
     <>
-      <Button label="傳送" onClick={handleClick} disabled={loading} />
+      <Button
+        label="傳送"
+        onClick={handleClick}
+        disabled={loading || !data.loaded}
+      />
       <Confirm
         isOpen={open}
         title="傳送"

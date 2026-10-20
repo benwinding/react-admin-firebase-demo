@@ -33,8 +33,11 @@ const Title = () => {
 };
 
 const BeaconDelete = (props) => {
-  const paths = ["beacon"];
-  return getDeleteButton(props, "beacons", "beacon", paths.join(","));
+  const paths = ["beacon", "prevs.beacon", "beaconForSound"];
+  return getDeleteButton(props, "beacons", "beacon", {
+    actions: paths,
+    broadcasts: paths,
+  });
 };
 
 export const BeaconList = () => {

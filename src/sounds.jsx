@@ -36,7 +36,10 @@ const Title = () => {
 
 const SoundDelete = (props) => {
   const paths = ["soundId"];
-  return getDeleteButton(props, "sounds", "聲音", paths.join(","));
+  return getDeleteButton(props, "sounds", "聲音", {
+    actions: paths,
+    broadcasts: paths,
+  });
 };
 
 export const SoundList = () => {

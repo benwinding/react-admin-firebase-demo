@@ -36,8 +36,9 @@ const Title = () => {
 };
 
 const VariableDelete = (props) => {
-  const paths = ["variableUpdates.variable"];
-  return getDeleteButton(props, "variables", "變數", paths.join(","));
+  return getDeleteButton(props, "variables", "變數", {
+    actions: ["variableUpdates.variable", "preconditions.variable"],
+  });
 };
 
 export const VariableList = () => {

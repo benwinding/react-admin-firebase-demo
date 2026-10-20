@@ -25,7 +25,6 @@ import {
   AutocompleteInput,
   required,
   FormDataConsumer,
-  useGetList,
   useDataProvider,
   useRecordContext,
 } from "react-admin";
@@ -39,7 +38,7 @@ import { FirebaseDataProvider } from "react-admin-firebase";
 import * as xid from "./xid";
 import { RichTextInput } from "ra-input-rich-text";
 
-import { getRecordField } from "./utils";
+import { getRecordField, withoutDisplayFields } from "./utils";
 
 import { useAllData, getActions, apiUrl } from "./serverCommon";
 import { getPrevId } from "./actionCommon";
@@ -49,6 +48,8 @@ import {
   scenarioResources,
   setCurrentScenario,
   useCurrentScenario,
+  getCurrentScenario,
+  clearCurrentScenario,
 } from "./currentScenario";
 
 import { buildGPX, BaseBuilder } from "gpx-builder";
@@ -177,11 +178,7 @@ function PublishButton(props) {
   const data = useAllData();
   const { actions, variables, images } = data;
   const [open, setOpen] = useState(false);
-  const peopleResult = useGetList("people", {
-    pagination: { page: 1, perPage: 500 },
-    sort: { field: "order", order: "ASC" },
-  });
-  const people = peopleResult.data || [];
+  const people = Object.values(data.people);
   function getFriends(node, condition) {
     return people.map((f) => {
       let portrait = null;
@@ -390,7 +387,7 @@ function PublishButton(props) {
       <Button
         label="發佈"
         onClick={handleClick}
-        disabled={disabled || loading}
+        disabled={disabled || loading || !data.loaded}
       />
       <Confirm
         isOpen={open}
@@ -566,8 +563,8 @@ function GpxButton(props) {
       setOpen(false);
       link.click();
     } catch (e) {
-      console.e("error publishing", e);
-      notify(e, { type: "error" });
+      console.error("error exporting gpx", e);
+      notify("路線檔產生失敗；原因 = " + e, { type: "error" });
       setLoading(false);
       setOpen(false);
     }
@@ -577,7 +574,7 @@ function GpxButton(props) {
       <Button
         label="路線檔"
         onClick={handleConfirm}
-        disabled={disabled || loading}
+        disabled={disabled || loading || !data.loaded}
       />
     </>
   );
@@ -602,6 +599,28 @@ function getProvider(scenarioId) {
   return FirebaseDataProvider(config, scenarioOtions);
 }
 
+// Firestore batches hold at most 500 writes
+const deleteBatchSize = 400;
+
+// deletes the scenario's own records (actions, images, ...); uploaded files
+// stay in Storage
+async function deleteScenarioRecords(scenarioId) {
+  const provider = getProvider(scenarioId);
+  for (const resource of scenarioResources) {
+    const { data } = await provider.getList(resource, {
+      pagination: { page: 1, perPage: 100000 },
+      sort: { field: "id", order: "ASC" },
+      filter: {},
+    });
+    const ids = data.map((r) => r.id);
+    for (let i = 0; i < ids.length; i += deleteBatchSize) {
+      await provider.deleteMany(resource, {
+        ids: ids.slice(i, i + deleteBatchSize),
+      });
+    }
+  }
+}
+
 function DeleteButton(props) {
   const record = useRecordContext(props);
   const notify = useNotify();
@@ -617,11 +636,15 @@ function DeleteButton(props) {
   async function handleConfirm() {
     setOpen(false);
     setLoading(true);
-    const response = await unpublish(scnId);
     try {
+      const response = await unpublish(scnId);
       if (response.ok) {
+        await deleteScenarioRecords(scnId);
         const result = await deleteScenario();
         console.log("delete result:", scnId, result);
+        if (getCurrentScenario() === scnId) {
+          clearCurrentScenario();
+        }
         notify("成功刪除" + getRecordField(record, "name"), {
           type: "success",
         });
@@ -632,11 +655,12 @@ function DeleteButton(props) {
         );
       }
     } catch (e) {
-      notify("解除發佈失敗；原因 =" + e, { type: "error" });
+      console.error("failed to delete scenario", e);
+      notify("刪除失敗；原因 =" + e, { type: "error" });
+    } finally {
+      setLoading(false);
+      refresh();
     }
-    setLoading(false);
-    setOpen(false);
-    refresh();
   }
   return (
     <>
@@ -677,6 +701,7 @@ function CloneButton(props) {
     broadcasts,
     variables,
     people,
+    loaded,
   } = useAllData();
   const refresh = useRefresh();
   const idMap = new Map();
@@ -706,12 +731,12 @@ function CloneButton(props) {
   createData.categories = null;
   createData.featured = false;
   createData.public = false;
+  // the copy belongs to whoever made it
+  createData.uid =
+    getAuthUid() || localStorage.getItem("uid") || createData.uid;
   const create = () => dataProvider.create("scenarios", { data: createData });
   const baseProvider = getProvider(createData.id);
-  // TODO copy UID
-  async function handleConfirm() {
-    setOpen(false);
-    setLoading(true);
+  async function cloneScenario() {
     await create();
 
     function createFields(field, fieldName) {
@@ -719,7 +744,9 @@ function CloneButton(props) {
       return values.map((a) => {
         const newA = JSON.parse(JSON.stringify(a));
         newA.id = idMap.get(a.id);
-        return baseProvider.create(fieldName, { data: newA });
+        return baseProvider.create(fieldName, {
+          data: withoutDisplayFields(newA),
+        });
       });
     }
 
@@ -729,7 +756,6 @@ function CloneButton(props) {
       ...createFields(images, "images"),
       ...createFields(sounds, "sounds"),
       ...createFields(mapStyles, "mapStyles"),
-      ...createFields(locations, "locations"),
       ...createFields(variables, "variables"),
       ...createFields(people, "people"),
     ]);
@@ -753,12 +779,12 @@ function CloneButton(props) {
       updateValueFor(a, "sender");
       if (a.variableUpdates) {
         a.variableUpdates.forEach((u) => {
-          updateValuesFor(u, "name");
+          updateValueFor(u, "variable");
         });
       }
       if (a.preconditions) {
         a.preconditions.forEach((p) => {
-          updateValuesFor(p, "variable");
+          updateValueFor(p, "variable");
         });
       }
       if (a.pictures) {
@@ -773,7 +799,9 @@ function CloneButton(props) {
         const newA = JSON.parse(JSON.stringify(a));
         newA.id = idMap.get(a.id);
         updateValuesFor(newA);
-        return baseProvider.create("broadcasts", { data: newA });
+        return baseProvider.create("broadcasts", {
+          data: withoutDisplayFields(newA),
+        });
       })
     );
     await Promise.all(
@@ -828,7 +856,7 @@ function CloneButton(props) {
               rec.fallback = fallback;
             }
             const asVariable = newA[`triggers_${oldId}_asVariable`];
-            if (fallback) {
+            if (asVariable) {
               delete newA[`triggers_${oldId}_asVariable`];
               rec.asVariable = asVariable;
             }
@@ -836,14 +864,26 @@ function CloneButton(props) {
           });
           newA.prevs = prevs;
         }
-        return baseProvider.create("actions", { data: newA });
+        return baseProvider.create("actions", {
+          data: withoutDisplayFields(newA),
+        });
       })
     );
+  }
 
-    setLoading(false);
+  async function handleConfirm() {
     setOpen(false);
-    notify("複製成功", { type: "success" });
-    refresh();
+    setLoading(true);
+    try {
+      await cloneScenario();
+      notify("複製成功", { type: "success" });
+    } catch (e) {
+      console.error("failed to clone", e);
+      notify("複製失敗；原因 = " + e, { type: "error" });
+    } finally {
+      setLoading(false);
+      refresh();
+    }
   }
 
   return (
@@ -851,7 +891,7 @@ function CloneButton(props) {
       <Button
         label="複製"
         onClick={handleClick}
-        disabled={disabled || loading}
+        disabled={disabled || loading || !loaded}
       />
       <Confirm
         isOpen={open}

@@ -61,7 +61,12 @@ const ImageDelete = (props) => {
     "markerIcon",
     "guideImage",
   ];
-  return getDeleteButton(props, "images", "圖片", paths.join(","));
+  return getDeleteButton(props, "images", "圖片", {
+    actions: paths,
+    broadcasts: paths,
+    people: ["userPortrait"],
+    scenarios: ["pictureId"],
+  });
 };
 
 export const ImageCreate = () => (
