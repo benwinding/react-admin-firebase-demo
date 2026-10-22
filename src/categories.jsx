@@ -5,7 +5,6 @@ import {
   List,
   Create,
   Edit,
-  Filter,
   SimpleForm,
   TextField,
   TextInput,
@@ -21,15 +20,13 @@ import {
   TopToolbar,
   Button,
   Confirm,
-  fetchStart,
-  fetchEnd,
   useGetList,
   useNotify,
   SelectInput,
+  useRecordContext,
 } from "react-admin";
 
 import { useState } from "react";
-import { useDispatch } from "react-redux";
 import { apiUrl } from "./serverCommon";
 
 const displayTypes = [
@@ -39,13 +36,12 @@ const displayTypes = [
   { id: "LIST", name: "列表" },
 ];
 
-const CategoryFilter = (props) => (
-  <Filter {...props}>
-    <TextInput label="Search" source="name" alwaysOn />
-  </Filter>
-);
+const categoryFilters = [
+  <TextInput label="Search" source="name" alwaysOn key="name" />,
+];
 
-const Title = ({ record }) => {
+const Title = () => {
+  const record = useRecordContext();
   return (
     <span>
       分類
@@ -56,22 +52,19 @@ const Title = ({ record }) => {
 
 function CatPublishButton() {
   const notify = useNotify();
-  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const handleClick = () => setOpen(true);
   const handleDialogClose = () => setOpen(false);
-  const categoryResult = useGetList(
-    "categories",
-    { page: 1, perPage: 500 },
-    { field: "order", order: "ASC" }
-  );
-  const categories = categoryResult.data;
+  const categoryResult = useGetList("categories", {
+    pagination: { page: 1, perPage: 500 },
+    sort: { field: "order", order: "ASC" },
+  });
+  const categories = categoryResult.data || [];
   const [open, setOpen] = useState(false);
 
   function handleConfirm() {
     setOpen(false);
     setLoading(true);
-    dispatch(fetchStart());
     try {
       console.log("cats", categories);
       const urlString = `${apiUrl}/v1/category`;
@@ -86,38 +79,30 @@ function CatPublishButton() {
       })
         .then((response) => {
           if (response.ok) {
-            notify("成功發佈分類", "success");
+            notify("成功發佈分類", { type: "success" });
           } else {
-            notify(
-              "發佈失敗；原因 =" + response.body + " " + response.status,
-              "error"
-            );
+            notify("發佈失敗；原因 =" + response.body + " " + response.status, {
+              type: "error",
+            });
           }
         })
         .catch((e) => {
-          notify("發佈失敗；原因 =" + e, "error");
+          notify("發佈失敗；原因 =" + e, { type: "error" });
         })
         .finally(() => {
           setLoading(false);
           setOpen(false);
-          dispatch(fetchEnd());
         });
     } catch (e) {
-      notify(e, "error");
+      notify(String(e), { type: "error" });
       setLoading(false);
       setOpen(false);
-      dispatch(fetchEnd());
     }
   }
 
   return (
     <>
-      <Button
-        label="發佈"
-        onClick={handleClick}
-        disabled={loading}
-        primary="true"
-      />
+      <Button label="發佈" onClick={handleClick} disabled={loading} />
       <Confirm
         isOpen={open}
         title="確認發佈"
@@ -131,25 +116,24 @@ function CatPublishButton() {
   );
 }
 
-const ListActions = (props) => (
+const ListActions = () => (
   <TopToolbar>
     <CreateButton />
     <ExportButton />
-    <CatPublishButton {...props} />
+    <CatPublishButton />
   </TopToolbar>
 );
 
 // TODO: sort by order
-export const CategoryList = (props) => {
+export const CategoryList = () => {
   return (
     <List
       title={<Title />}
       actions={<ListActions />}
-      filters={<CategoryFilter />}
+      filters={categoryFilters}
       sort={{ field: "order", order: "ASC" }}
-      {...props}
     >
-      <Datagrid>
+      <Datagrid rowClick={false}>
         <NumberField label="順序" source="order" />
         <TextField label="名稱" source="name" />
         <TextField label="說明" source="description" />
@@ -161,8 +145,8 @@ export const CategoryList = (props) => {
   );
 };
 
-export const CategoryCreate = (props) => (
-  <Create title={<Title />} {...props}>
+export const CategoryCreate = () => (
+  <Create title={<Title />}>
     <SimpleForm>
       <TextInput label="名稱" source="name" />
       <TextInput label="簡介" source="description" />
@@ -170,32 +154,32 @@ export const CategoryCreate = (props) => (
         label="顯示方式"
         source="displayType"
         choices={displayTypes}
-        initialValue="ONE_IN_A_ROW"
+        defaultValue="ONE_IN_A_ROW"
       />
-      <NumberInput label="顯示個數" source="displayCount" initialValue={3} />
-      <NumberInput label="順序" source="order" initialValue={1} />
-      <BooleanInput label="隱藏" source="hidden" initialValue={false} />
+      <NumberInput label="顯示個數" source="displayCount" defaultValue={3} />
+      <NumberInput label="順序" source="order" defaultValue={1} />
+      <BooleanInput label="隱藏" source="hidden" defaultValue={false} />
     </SimpleForm>
   </Create>
 );
 
-export const CategoryEdit = (props) => (
-  <Edit title={<Title />} {...props}>
+export const CategoryEdit = () => (
+  <Edit title={<Title />}>
     <SimpleForm>
-      <TextInput disabled source="id" />
+      <TextInput readOnly source="id" />
       <TextInput label="名稱" source="name" />
       <TextInput label="簡介" source="description" />
       <SelectInput
         label="顯示方式"
         source="displayType"
         choices={displayTypes}
-        initialValue="ONE_IN_A_ROW"
+        defaultValue="ONE_IN_A_ROW"
       />
-      <NumberInput label="顯示個數" source="displayCount" initialValue={3} />
+      <NumberInput label="顯示個數" source="displayCount" defaultValue={3} />
       <NumberInput label="順序" source="order" />
       <BooleanInput label="隱藏" source="hidden" />
-      <DateTimeInput label="建立時間" disabled source="createdate" />
-      <DateTimeInput label="修改時間" disabled source="lastupdate" />
+      <DateTimeInput label="建立時間" readOnly source="createdate" />
+      <DateTimeInput label="修改時間" readOnly source="lastupdate" />
     </SimpleForm>
   </Edit>
 );

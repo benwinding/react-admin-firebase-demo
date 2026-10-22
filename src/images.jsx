@@ -6,7 +6,6 @@ import {
   List,
   Create,
   Edit,
-  Filter,
   SimpleForm,
   TextField,
   TextInput,
@@ -14,32 +13,33 @@ import {
   DateTimeInput,
   ImageInput,
   required,
+  useRecordContext,
 } from "react-admin";
 
 import { MyImageField } from "./MyImageField";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 import { getDeleteButton } from "./deleteResource";
 
-const ImageFilter = (props) => (
-  <Filter {...props}>
-    <TextInput label="Search" source="name" alwaysOn />
-  </Filter>
-);
+const imageFilters = [
+  <TextInput label="Search" source="name" alwaysOn key="name" />,
+];
 
-const Title = ({ record }) => {
+const Title = () => {
+  const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》圖片
+      《{getCurrentScenarioName()}》圖片
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
 };
 
-export const ImageList = (props) => {
-  if (localStorage.getItem("scenario")) {
+export const ImageList = () => {
+  if (getCurrentScenario()) {
     return (
-      <List title={<Title />} {...props} filters={<ImageFilter />}>
-        <Datagrid>
+      <List title={<Title />} filters={imageFilters}>
+        <Datagrid rowClick={false}>
           <TextField label="編號" source="rowIndex" />
           <TextField label="名稱" source="name" />
           <MyImageField label="圖片" source="image.src" />
@@ -48,7 +48,7 @@ export const ImageList = (props) => {
         </Datagrid>
       </List>
     );
-  } else return DummyList(props);
+  } else return <DummyList />;
 };
 
 const ImageDelete = (props) => {
@@ -61,11 +61,16 @@ const ImageDelete = (props) => {
     "markerIcon",
     "guideImage",
   ];
-  return getDeleteButton(props, "images", "圖片", paths.join(","));
+  return getDeleteButton(props, "images", "圖片", {
+    actions: paths,
+    broadcasts: paths,
+    people: ["userPortrait"],
+    scenarios: ["pictureId"],
+  });
 };
 
-export const ImageCreate = (props) => (
-  <Create title={<Title />} {...props}>
+export const ImageCreate = () => (
+  <Create title={<Title />}>
     <SimpleForm>
       <TextInput label="名稱" source="name" />
       <ImageInput label="圖片" source="image" validate={required()}>
@@ -76,17 +81,17 @@ export const ImageCreate = (props) => (
   </Create>
 );
 
-export const ImageEdit = (props) => (
-  <Edit title={<Title />} {...props}>
+export const ImageEdit = () => (
+  <Edit title={<Title />}>
     <SimpleForm>
-      <TextInput disabled source="id" />
+      <TextInput readOnly source="id" />
       <TextInput label="名稱" source="name" />
       <ImageInput label="圖片" source="image" validate={required()}>
         <MyImageField source="src" title="name" />
       </ImageInput>
       <>(圖釘建議大小： 150 x 150)</>
-      <DateTimeInput label="建立時間" disabled source="createdate" />
-      <DateTimeInput label="修改時間" disabled source="lastupdate" />
+      <DateTimeInput label="建立時間" readOnly source="createdate" />
+      <DateTimeInput label="修改時間" readOnly source="lastupdate" />
     </SimpleForm>
   </Edit>
 );

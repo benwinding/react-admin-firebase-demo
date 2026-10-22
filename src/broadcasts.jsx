@@ -7,7 +7,6 @@ import {
   List,
   Create,
   Edit,
-  Filter,
   SimpleForm,
   TextField,
   TextInput,
@@ -17,21 +16,20 @@ import {
   FormDataConsumer,
   required,
   FunctionField,
-  fetchStart,
-  fetchEnd,
   useNotify,
+  useRecordContext,
 } from "react-admin";
 
 import { getRecordField } from "./utils";
 import { useState } from "react";
-import { useDispatch } from "react-redux";
 
-import BluetoothIcon from "@material-ui/icons/Bluetooth";
-import MyLocationIcon from "@material-ui/icons/MyLocation";
-import ReplyIcon from "@material-ui/icons/Reply";
-import ArrowForwardIcon from "@material-ui/icons/ArrowForward";
-import HourglassBottomIcon from "@material-ui/icons/HourglassEmpty";
+import BluetoothIcon from "@mui/icons-material/Bluetooth";
+import MyLocationIcon from "@mui/icons-material/MyLocation";
+import ReplyIcon from "@mui/icons-material/Reply";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import HourglassBottomIcon from "@mui/icons-material/HourglassEmpty";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 import { apiUrl } from "./serverCommon";
 
 const conditionTypes = [
@@ -58,31 +56,25 @@ import {
 
 import { useAllData, getActions } from "./serverCommon";
 
-const Title = ({ record }) => {
+const Title = () => {
+  const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》廣播
+      《{getCurrentScenarioName()}》廣播
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
 };
 
-const BroadcastFilter = (props) => (
-  <Filter {...props}>
-    <TextInput label="Search" source="name" alwaysOn />
-  </Filter>
-);
+const broadcastFilters = [
+  <TextInput label="Search" source="name" alwaysOn key="name" />,
+];
 
-export const BroadcastList = (props) => {
-  if (localStorage.getItem("scenario")) {
+export const BroadcastList = () => {
+  if (getCurrentScenario()) {
     return (
-      <List
-        title={<Title />}
-        {...props}
-        perPage={100}
-        filters={<BroadcastFilter />}
-      >
-        <Datagrid>
+      <List title={<Title />} perPage={100} filters={broadcastFilters}>
+        <Datagrid rowClick={false}>
           <TextField label="編號" source="rowIndex" />
           <TextField label="名稱" source="name" />
           <FunctionField label="條件" render={getConditionIcon} />
@@ -93,18 +85,18 @@ export const BroadcastList = (props) => {
         </Datagrid>
       </List>
     );
-  } else return DummyList(props);
+  } else return <DummyList />;
 };
 
 const InputForm = (props) => {
   return (
-    <SimpleForm {...props} validate={validateBeforeSubmit}>
+    <SimpleForm validate={validateBeforeSubmit}>
       <FormDataConsumer>
         {({ formData }) => {
           return (
             <>
               {props.showid === "true" ? (
-                <TextInput source="id" options={{ disabled: true }} />
+                <TextInput source="id" readOnly />
               ) : (
                 <></>
               )}
@@ -121,15 +113,14 @@ const InputForm = (props) => {
                 {({
                   formData, // The whole form data
                 }) => {
-                  const getSource = (field) => field;
                   return (
                     <>
                       {formData &&
                         formData.conditionType === "GEOFENCE" &&
-                        locationCondition(getSource)}
+                        locationCondition()}
                       {formData &&
                         formData.conditionType === "BEACON" &&
-                        beaconCondition(getSource)}
+                        beaconCondition()}
                     </>
                   );
                 }}
@@ -171,18 +162,18 @@ const InputForm = (props) => {
   );
 };
 
-export const BroadcastCreate = (props) => {
+export const BroadcastCreate = () => {
   return (
-    <Create title={<Title />} {...props}>
-      <InputForm {...props} showid="false" />
+    <Create title={<Title />}>
+      <InputForm showid="false" />
     </Create>
   );
 };
 
-export const BroadcastEdit = (props) => {
+export const BroadcastEdit = () => {
   return (
-    <Edit title={<Title />} {...props}>
-      <InputForm {...props} showid="true" />
+    <Edit title={<Title />}>
+      <InputForm showid="true" />
     </Edit>
   );
 };
@@ -230,79 +221,79 @@ const getConditionIcon = (record) => {
 };
 
 function SendButton(props) {
+  const record = useRecordContext(props);
   const [open, setOpen] = useState(false);
   const handleClick = () => setOpen(true);
   const [loading, setLoading] = useState(false);
   const data = useAllData();
   const handleDialogClose = () => setOpen(false);
-  const dispatch = useDispatch();
   const notify = useNotify();
-  function handleConfirm() {
+  async function handleConfirm() {
     setOpen(false);
     setLoading(true);
-    dispatch(fetchStart());
-    const condition = getCondition(props.record, data);
-    const scenario = localStorage.getItem("scenario");
-    const actions = getActions(props.record, data, condition).map((a) => ({
-      ...a,
-      session: {
-        scenario: scenario,
-        chapter: "",
-      },
-    }));
-    const messages = actions.map((a) => {
-      return {
-        payload: {
-          type: "PERFORM_DIRECTLY",
-          action: a,
+    try {
+      const condition = getCondition(record, data);
+      const scenario = getCurrentScenario();
+      const actions = getActions(record, data, condition).map((a) => ({
+        ...a,
+        session: {
+          scenario: scenario,
+          chapter: "",
         },
-        sender: "ghost",
-        receiver: "?u",
-        id: `perform-${a.id}`,
-        scenarioId: scenario,
-      };
-    });
-    const url = `${apiUrl}/v1/broadcast`;
-    Promise.all(
-      messages.map((m) => {
-        fetch(url, {
-          method: "POST",
-          body: JSON.stringify(m),
-          headers: {
-            "content-type": "application/json",
+      }));
+      const messages = actions.map((a) => {
+        return {
+          payload: {
+            type: "PERFORM_DIRECTLY",
+            action: a,
           },
-        }).then((response) => {
-          if (response.ok) {
-            notify(`成功傳送「${getRecordField(props, "name")}」`, "success");
-          } else {
-            notify(
-              "傳送失敗；原因 =" +
-                JSON.stringify(response.body) +
-                " " +
-                response.status,
-              "error"
-            );
-          }
+          sender: "ghost",
+          receiver: "?u",
+          id: `perform-${a.id}`,
+          scenarioId: scenario,
+        };
+      });
+      const url = `${apiUrl}/v1/broadcast`;
+      const responses = await Promise.all(
+        messages.map((m) =>
+          fetch(url, {
+            method: "POST",
+            body: JSON.stringify(m),
+            headers: {
+              "content-type": "application/json",
+            },
+          })
+        )
+      );
+      const failed = responses.filter((response) => !response.ok);
+      if (failed.length === 0) {
+        notify(`成功傳送「${getRecordField(record, "name")}」`, {
+          type: "success",
         });
-      })
-    ).finally(() => {
+      } else {
+        notify("傳送失敗；原因 = " + failed.map((r) => r.status).join(", "), {
+          type: "error",
+        });
+      }
+    } catch (e) {
+      console.error("failed to send", e);
+      notify("傳送失敗；原因 = " + e, { type: "error" });
+    } finally {
       setLoading(false);
-      dispatch(fetchEnd());
-    });
+    }
   }
   return (
     <>
       <Button
         label="傳送"
         onClick={handleClick}
-        disabled={loading}
-        primary="true"
+        disabled={loading || !data.loaded}
       />
       <Confirm
         isOpen={open}
         title="傳送"
         content={`你即將傳送「${getRecordField(
-          props,
+          record,
           "name"
         )}」給全部使用者。確定嗎？`}
         onConfirm={handleConfirm}

@@ -1,13 +1,11 @@
 // in src/posts.js
 import * as React from "react";
 // tslint:disable-next-line:no-var-requires
-import { CardActions, Datagrid, List, TextField } from "react-admin";
+import { Datagrid, List, TextField } from "react-admin";
 
 const Title = () => {
   return <span>請先設定目前劇本</span>;
 };
-
-export const NoneActions = () => <CardActions />;
 
 const EmptyPage = () => (
   <div>
@@ -20,14 +18,9 @@ const EmptyPage = () => (
   </div>
 );
 
-export const DummyList = (props) => (
-  <List
-    title={<Title />}
-    empty={<EmptyPage />}
-    {...props}
-    actions={<NoneActions />}
-  >
-    <Datagrid>
+export const DummyList = () => (
+  <List title={<Title />} empty={<EmptyPage />} actions={false}>
+    <Datagrid rowClick={false} bulkActionButtons={false}>
       <TextField label="請先設定目前劇本" source="name" />
     </Datagrid>
   </List>

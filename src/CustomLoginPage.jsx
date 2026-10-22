@@ -3,6 +3,12 @@ import React from "react";
 import { Login, LoginForm } from "react-admin";
 import StyledFirebaseAuth from "react-firebaseui/StyledFirebaseAuth";
 import firebase from "firebase/compat/app";
+import "firebase/compat/auth";
+import { firebaseConfig } from "./FIREBASE_CONFIG";
+import { clearCurrentScenario } from "./currentScenario";
+
+// firebaseui needs the compat API; this wraps the app react-admin-firebase created
+firebase.initializeApp(firebaseConfig);
 
 // Configure FirebaseUI.
 const uiConfig = {
@@ -31,25 +37,24 @@ const SignInScreen = () => (
   <StyledFirebaseAuth firebaseAuth={firebase.auth()} uiConfig={uiConfig} />
 );
 
-const CustomLoginForm = (props) => {
+const CustomLoginForm = () => {
   return (
     <div>
-      <LoginForm {...props} />
+      <LoginForm />
       <SignInScreen />
     </div>
   );
 };
 
-const CustomLoginPage = (props) => {
+const CustomLoginPage = () => {
   React.useEffect(() => {
     localStorage.removeItem("uid");
-    localStorage.removeItem("scenario");
-    localStorage.removeItem("scenarioName");
+    clearCurrentScenario();
     console.log("effect happened");
   });
   return (
-    <Login {...props}>
-      <CustomLoginForm {...props} />
+    <Login>
+      <CustomLoginForm />
     </Login>
   );
 };

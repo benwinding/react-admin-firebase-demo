@@ -4,48 +4,46 @@ import {
   List,
   Create,
   Edit,
-  Filter,
   SimpleForm,
   TextField,
   EditButton,
   TextInput,
   required,
+  useRecordContext,
 } from "react-admin";
 import { getDeleteButton } from "./deleteResource";
 import ImageReferenceInput from "./ImageReferenceInput";
 
 import { DummyList } from "./dummy";
-const PeopleFilter = (props) => (
-  <Filter {...props}>
-    <TextInput label="Search" source="name" alwaysOn />
-  </Filter>
-);
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
+const peopleFilters = [
+  <TextInput label="Search" source="name" alwaysOn key="name" />,
+];
 
-const Title = ({ record }) => {
+const Title = () => {
+  const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》朋友
+      《{getCurrentScenarioName()}》朋友
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
 };
 
 const PeopleDelete = (props) => {
-  const paths = ["people"];
-  return getDeleteButton(props, "people", "朋友", paths.join(","));
+  return getDeleteButton(props, "people", "朋友", { actions: ["sender"] });
 };
 
-export const PeopleList = (props) => {
-  if (localStorage.getItem("scenario")) {
+export const PeopleList = () => {
+  if (getCurrentScenario()) {
     return (
       <List
         title={<Title />}
-        {...props}
-        perPage="100"
+        perPage={100}
         sort={{ field: "name", order: "ASC" }}
-        filters={<PeopleFilter />}
+        filters={peopleFilters}
       >
-        <Datagrid>
+        <Datagrid rowClick={false}>
           <TextField label="編號" source="rowIndex" />
           <TextField label="代號" source="id" />
           <TextField label="名字" source="name" />
@@ -54,12 +52,12 @@ export const PeopleList = (props) => {
         </Datagrid>
       </List>
     );
-  } else return DummyList(props);
+  } else return <DummyList />;
 };
 
-const InputForm = (props) => {
+const InputForm = () => {
   return (
-    <SimpleForm {...props}>
+    <SimpleForm>
       <>
         <TextInput label="姓名" source="name" validate={required()} />
         <br />
@@ -78,14 +76,14 @@ const InputForm = (props) => {
   );
 };
 
-export const PeopleCreate = (props) => (
-  <Create title={<Title />} {...props}>
-    <InputForm {...props} />
+export const PeopleCreate = () => (
+  <Create title={<Title />}>
+    <InputForm />
   </Create>
 );
 
-export const PeopleEdit = (props) => (
-  <Edit title={<Title />} {...props}>
-    <InputForm {...props} />
+export const PeopleEdit = () => (
+  <Edit title={<Title />}>
+    <InputForm />
   </Edit>
 );

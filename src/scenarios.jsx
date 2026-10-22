@@ -7,7 +7,6 @@ import {
   List,
   Create,
   Edit,
-  Filter,
   SimpleForm,
   TextField,
   TextInput,
@@ -16,10 +15,7 @@ import {
   Button,
   useRefresh,
   useNotify,
-  fetchStart,
-  fetchEnd,
   Confirm,
-  useMutation,
   BooleanField,
   BooleanInput,
   NumberInput,
@@ -29,78 +25,64 @@ import {
   AutocompleteInput,
   required,
   FormDataConsumer,
-  useGetList,
+  useDataProvider,
+  useRecordContext,
 } from "react-admin";
-import { createStore } from "redux";
 import { useState, useEffect } from "react";
-import Dialog from "@material-ui/core/Dialog";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
-import DialogTitle from "@material-ui/core/DialogTitle";
-import { useSelector, useDispatch } from "react-redux";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import { useQueryClient } from "@tanstack/react-query";
 import { FirebaseDataProvider } from "react-admin-firebase";
-import * as xid from "xid-js";
-import RichTextInput from "ra-input-rich-text";
+import * as xid from "./xid";
+import { RichTextInput } from "ra-input-rich-text";
 
-import { getRecordField } from "./utils";
+import { getRecordField, withoutDisplayFields } from "./utils";
 
 import { useAllData, getActions, apiUrl } from "./serverCommon";
 import { getPrevId } from "./actionCommon";
-import { isSuperUser } from "./App";
+import { isSuperUser, getAuthUid } from "./App";
 import ImageReferenceInput from "./ImageReferenceInput";
-
-export function scenarioReducer(state = { value: "" }, action) {
-  switch (action.type) {
-    case "setScenario":
-      return { value: action.scenario };
-    default:
-      return state;
-  }
-}
+import {
+  scenarioResources,
+  setCurrentScenario,
+  useCurrentScenario,
+  getCurrentScenario,
+  clearCurrentScenario,
+} from "./currentScenario";
 
 import { buildGPX, BaseBuilder } from "gpx-builder";
 const { Point, Track, Segment } = BaseBuilder.MODELS;
 
-const store = createStore(scenarioReducer);
-
-store.subscribe(() => console.log("listener", store.getState()));
-
-const ScenarioFilter = (props) => (
-  <Filter {...props}>
-    <TextInput label="Search" source="name" alwaysOn />
-  </Filter>
-);
+const scenarioFilters = [
+  <TextInput label="Search" source="name" alwaysOn key="name" />,
+];
 // const cdnRoot = 'http://daqiaotou-storage.floraland.tw/ghostspeak_editor';
 
-function isCurrentScenario(props) {
-  if (props && props.record) {
-    return (
-      useSelector((state) => state.currentScenario.value === props.record.id) ||
-      localStorage.getItem("scenario") === props.record.id
-    );
-  } else {
-    return false;
-  }
+function useIsCurrentScenario(record) {
+  const currentScenario = useCurrentScenario();
+  return !!record && currentScenario === record.id;
 }
 
 function UseButton(props) {
-  const active = isCurrentScenario(props);
-  const dispatch = useDispatch();
+  const record = useRecordContext(props);
+  const active = useIsCurrentScenario(record);
+  const queryClient = useQueryClient();
   const refresh = useRefresh();
   function handleClick() {
-    const scenario = getRecordField(props, "id");
-    localStorage.setItem("scenario", scenario);
-    localStorage.setItem("scenarioName", getRecordField(props, "name"));
-    dispatch({ type: "setScenario", scenario: scenario });
+    setCurrentScenario(
+      getRecordField(record, "id"),
+      getRecordField(record, "name")
+    );
+    // drop cached records of the previous scenario
+    queryClient.removeQueries({
+      predicate: (query) => scenarioResources.includes(query.queryKey[0]),
+    });
     refresh();
   }
   return (
-    <Button
-      label="設定為目前劇本"
-      onClick={handleClick}
-      disabled={active}
-      primary="true"
-    />
+    <Button label="設定為目前劇本" onClick={handleClick} disabled={active} />
   );
 }
 
@@ -187,21 +169,16 @@ function getCondition(currentNode, data) {
 }
 
 function PublishButton(props) {
-  const disabled = !isCurrentScenario(props);
+  const record = useRecordContext(props);
+  const disabled = !useIsCurrentScenario(record);
   const notify = useNotify();
-  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const handleClick = () => setOpen(true);
   const handleDialogClose = () => setOpen(false);
   const data = useAllData();
   const { actions, variables, images } = data;
   const [open, setOpen] = useState(false);
-  const peopleResult = useGetList(
-    "people",
-    { page: 1, perPage: 500 },
-    { field: "order", order: "ASC" }
-  );
-  const people = Object.values(peopleResult.data);
+  const people = Object.values(data.people);
   function getFriends(node, condition) {
     return people.map((f) => {
       let portrait = null;
@@ -233,13 +210,11 @@ function PublishButton(props) {
   async function handleConfirm() {
     setOpen(false);
     setLoading(true);
-    dispatch(fetchStart());
     const actionTree = getActionTree(Object.values(actions));
     if (!actionTree) {
       setLoading(false);
       setOpen(false);
-      dispatch(fetchEnd());
-      notify("沒有初始動作，無法發佈！", "error");
+      notify("沒有初始動作，無法發佈！", { type: "error" });
       return;
     }
 
@@ -278,7 +253,7 @@ function PublishButton(props) {
       );
     }
     try {
-      const scenarioId = getRecordField(props, "id");
+      const scenarioId = getRecordField(record, "id");
       const template = getNodes(actionTree);
       const initialNode = template[0];
       if (initialNode) {
@@ -322,15 +297,15 @@ function PublishButton(props) {
       // const urlString = `http://localhost:8080/v1/scenario/graphscript/${getRecordField(
       const urlString = `${apiUrl}/v1/scenario/graphscript/${scenarioId}`;
       const url = new URL(urlString);
-      const displayName = getRecordField(props, "displayName") || null;
+      const displayName = getRecordField(record, "displayName") || null;
       const categories =
-        getRecordField(props, "categories")?.map((c) => c.category) || [];
+        getRecordField(record, "categories")?.map((c) => c.category) || [];
       const params = {
         overwrite: true,
       };
 
       const provider = getProvider(scenarioId);
-      const pictureId = getRecordField(props, "pictureId");
+      const pictureId = getRecordField(record, "pictureId");
       let imageUrl = null;
       if (pictureId) {
         const result = await provider.getOne("images", {
@@ -339,15 +314,15 @@ function PublishButton(props) {
         imageUrl = result.data?.image?.src;
       }
       const metadata = {
-        name: getRecordField(props, "name"),
+        name: getRecordField(record, "name"),
         displayName: displayName,
-        description: getRecordField(props, "description"),
-        featured: getRecordField(props, "featured"),
-        public: getRecordField(props, "public"),
-        ordinal: getRecordField(props, "ordinal") || Date.now(),
+        description: getRecordField(record, "description"),
+        featured: getRecordField(record, "featured"),
+        public: getRecordField(record, "public"),
+        ordinal: getRecordField(record, "ordinal") || Date.now(),
         categories: categories,
-        passcode: getRecordField(props, "passcode") || null,
-        details: getRecordField(props, "details") || null,
+        passcode: getRecordField(record, "passcode") || null,
+        details: getRecordField(record, "details") || null,
         image: imageUrl,
       };
       url.search = new URLSearchParams(params).toString();
@@ -364,33 +339,32 @@ function PublishButton(props) {
       })
         .then((response) => {
           if (response.ok) {
-            notify("成功發佈" + getRecordField(props, "name"), "success");
+            notify("成功發佈" + getRecordField(record, "name"), {
+              type: "success",
+            });
           } else {
-            notify(
-              "發佈失敗；原因 =" + response.body + " " + response.status,
-              "error"
-            );
+            notify("發佈失敗；原因 =" + response.body + " " + response.status, {
+              type: "error",
+            });
           }
         })
         .catch((e) => {
           console.error("failed to publish", e);
-          notify("發佈失敗；原因 = " + e, "error");
+          notify("發佈失敗；原因 = " + e, { type: "error" });
         })
         .finally(() => {
           setLoading(false);
           setOpen(false);
-          dispatch(fetchEnd());
         });
     } catch (e) {
       console.error("failed to publish", e);
-      notify("發佈失敗；原因 = " + e, "error");
+      notify("發佈失敗；原因 = " + e, { type: "error" });
       setLoading(false);
       setOpen(false);
-      dispatch(fetchEnd());
     }
   }
 
-  const name = getRecordField(props, "name");
+  const name = getRecordField(record, "name");
   const confirm = (
     <span>
       <p>你即將發佈《{name}》。使用者的進度將被中斷。確定嗎？</p>
@@ -413,8 +387,7 @@ function PublishButton(props) {
       <Button
         label="發佈"
         onClick={handleClick}
-        disabled={disabled || loading}
-        primary="true"
+        disabled={disabled || loading || !data.loaded}
       />
       <Confirm
         isOpen={open}
@@ -436,9 +409,9 @@ function unpublish(id) {
 }
 
 function UnpublishButton(props) {
-  const disabled = !isCurrentScenario(props);
+  const record = useRecordContext(props);
+  const disabled = !useIsCurrentScenario(record);
   const notify = useNotify();
-  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const handleClick = () => setOpen(true);
   const handleDialogClose = () => setOpen(false);
@@ -446,25 +419,25 @@ function UnpublishButton(props) {
   function handleConfirm() {
     setOpen(false);
     setLoading(true);
-    dispatch(fetchStart());
-    unpublish(getRecordField(props, "id"))
+    unpublish(getRecordField(record, "id"))
       .then((response) => {
         if (response.ok) {
-          notify("成功解除發佈" + getRecordField(props, "name"), "success");
+          notify("成功解除發佈" + getRecordField(record, "name"), {
+            type: "success",
+          });
         } else {
           notify(
             "解除發佈失敗；原因 =" + response.body + " " + response.status,
-            "error"
+            { type: "error" }
           );
         }
       })
       .catch((e) => {
-        notify("解除發佈失敗；原因 =" + e, "error");
+        notify("解除發佈失敗；原因 =" + e, { type: "error" });
       })
       .finally(() => {
         setLoading(false);
         setOpen(false);
-        dispatch(fetchEnd());
       });
   }
 
@@ -474,13 +447,12 @@ function UnpublishButton(props) {
         label="解除發佈"
         onClick={handleClick}
         disabled={disabled || loading}
-        primary="true"
       />
       <Confirm
         isOpen={open}
         title="確認解除發佈"
         content={`你即將解除發佈${getRecordField(
-          props,
+          record,
           "name"
         )}；用戶將無法使用。確定嗎？`}
         onConfirm={handleConfirm}
@@ -493,9 +465,9 @@ function UnpublishButton(props) {
 }
 
 function GpxButton(props) {
-  const disabled = !isCurrentScenario(props);
+  const record = useRecordContext(props);
+  const disabled = !useIsCurrentScenario(record);
   const notify = useNotify();
-  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const data = useAllData();
   const { actions } = data;
@@ -504,12 +476,10 @@ function GpxButton(props) {
   function handleConfirm() {
     setOpen(false);
     setLoading(true);
-    dispatch(fetchStart());
     const actionTree = getActionTree(Object.values(actions));
     if (!actionTree) {
       setLoading(false);
       setOpen(false);
-      dispatch(fetchEnd());
       notify("沒有初始動作，無法發佈！");
       return;
     }
@@ -540,12 +510,12 @@ function GpxButton(props) {
     try {
       const payload = getNodes(actionTree);
       const urlString = `${apiUrl}/v1/scenario/graphscript/${getRecordField(
-        props,
+        record,
         "id"
       )}`;
       const url = new URL(urlString);
       const params = {
-        name: getRecordField(props, "name"),
+        name: getRecordField(record, "name"),
         overwrite: true,
       };
       url.search = new URLSearchParams(params).toString();
@@ -588,17 +558,15 @@ function GpxButton(props) {
       const blob = new Blob([cleanGpx], { type: "application/gpx+xml" });
       const gpxUrl = window.URL.createObjectURL(blob);
       link.href = gpxUrl;
-      link.download = getRecordField(props, "name") + ".gpx";
+      link.download = getRecordField(record, "name") + ".gpx";
       setLoading(false);
       setOpen(false);
-      dispatch(fetchEnd());
       link.click();
     } catch (e) {
-      console.e("error publishing", e);
-      notify(e, "error");
+      console.error("error exporting gpx", e);
+      notify("路線檔產生失敗；原因 = " + e, { type: "error" });
       setLoading(false);
       setOpen(false);
-      dispatch(fetchEnd());
     }
   }
   return (
@@ -606,16 +574,15 @@ function GpxButton(props) {
       <Button
         label="路線檔"
         onClick={handleConfirm}
-        disabled={disabled || loading}
-        primary="true"
+        disabled={disabled || loading || !data.loaded}
       />
     </>
   );
 }
 
-function Blocker(props) {
+function Blocker({ isOpen }) {
   return (
-    <Dialog {...props} open={props.isOpen} aria-labelledby="alert-dialog-title">
+    <Dialog open={isOpen} aria-labelledby="alert-dialog-title">
       <DialogTitle id="alert-dialog-title">複製中</DialogTitle>
       <DialogContent>
         <DialogContentText>請等待複製完成後再繼續操作。</DialogContentText>
@@ -632,57 +599,77 @@ function getProvider(scenarioId) {
   return FirebaseDataProvider(config, scenarioOtions);
 }
 
+// Firestore batches hold at most 500 writes
+const deleteBatchSize = 400;
+
+// deletes the scenario's own records (actions, images, ...); uploaded files
+// stay in Storage
+async function deleteScenarioRecords(scenarioId) {
+  const provider = getProvider(scenarioId);
+  for (const resource of scenarioResources) {
+    const { data } = await provider.getList(resource, {
+      pagination: { page: 1, perPage: 100000 },
+      sort: { field: "id", order: "ASC" },
+      filter: {},
+    });
+    const ids = data.map((r) => r.id);
+    for (let i = 0; i < ids.length; i += deleteBatchSize) {
+      await provider.deleteMany(resource, {
+        ids: ids.slice(i, i + deleteBatchSize),
+      });
+    }
+  }
+}
+
 function DeleteButton(props) {
+  const record = useRecordContext(props);
   const notify = useNotify();
-  const dispatch = useDispatch();
+  const dataProvider = useDataProvider();
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const handleClick = () => setOpen(true);
   const handleDialogClose = () => setOpen(false);
-  const scnId = getRecordField(props, "id");
-  const [deleteScenario] = useMutation({
-    type: "delete",
-    resource: "scenarios",
-    payload: { id: scnId },
-  });
+  const scnId = getRecordField(record, "id");
+  const deleteScenario = () =>
+    dataProvider.delete("scenarios", { id: scnId, previousData: record });
   const refresh = useRefresh();
   async function handleConfirm() {
     setOpen(false);
     setLoading(true);
-    dispatch(fetchStart());
-    const response = await unpublish(scnId);
     try {
+      const response = await unpublish(scnId);
       if (response.ok) {
+        await deleteScenarioRecords(scnId);
         const result = await deleteScenario();
         console.log("delete result:", scnId, result);
-        notify("成功刪除" + getRecordField(props, "name"), "success");
+        if (getCurrentScenario() === scnId) {
+          clearCurrentScenario();
+        }
+        notify("成功刪除" + getRecordField(record, "name"), {
+          type: "success",
+        });
       } else {
         notify(
           `刪除失敗；原因 = 無法解除發佈${response.body} ${response.status}`,
-          "error"
+          { type: "error" }
         );
       }
     } catch (e) {
-      notify("解除發佈失敗；原因 =" + e, "error");
+      console.error("failed to delete scenario", e);
+      notify("刪除失敗；原因 =" + e, { type: "error" });
+    } finally {
+      setLoading(false);
+      refresh();
     }
-    setLoading(false);
-    setOpen(false);
-    dispatch(fetchEnd());
-    refresh();
   }
   return (
     <>
-      <Button
-        label="刪除"
-        onClick={handleClick}
-        disabled={loading}
-        primary="true"
-      />
+      <Button label="刪除" onClick={handleClick} disabled={loading} />
       <Confirm
         isOpen={open}
         title="確認刪除劇本"
         content={`你即將刪除${getRecordField(
-          props,
+          record,
           "name"
         )}；此動作無法回復。確定嗎？`}
         onConfirm={handleConfirm}
@@ -695,9 +682,10 @@ function DeleteButton(props) {
 }
 
 function CloneButton(props) {
-  const disabled = !isCurrentScenario(props);
+  const record = useRecordContext(props);
+  const disabled = !useIsCurrentScenario(record);
   const notify = useNotify();
-  const dispatch = useDispatch();
+  const dataProvider = useDataProvider();
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const handleClick = () => setOpen(true);
@@ -713,6 +701,7 @@ function CloneButton(props) {
     broadcasts,
     variables,
     people,
+    loaded,
   } = useAllData();
   const refresh = useRefresh();
   const idMap = new Map();
@@ -732,27 +721,22 @@ function CloneButton(props) {
       obj[field] = newValue ? newValue : null;
     }
   }
-  const createData = JSON.parse(JSON.stringify(props.record));
+  const createData = JSON.parse(JSON.stringify(record));
   const cloneId = xid.next();
   createData.id = cloneId;
-  createData.name = getRecordField(props, "name") + "-" + cloneId;
+  createData.name = getRecordField(record, "name") + "-" + cloneId;
   createData.cloned = true;
   updateValueFor(createData, "pictureId");
   createData.passcode = null;
   createData.categories = null;
   createData.featured = false;
   createData.public = false;
-  const [create] = useMutation({
-    type: "create",
-    resource: "scenarios",
-    payload: { data: createData },
-  });
+  // the copy belongs to whoever made it
+  createData.uid =
+    getAuthUid() || localStorage.getItem("uid") || createData.uid;
+  const create = () => dataProvider.create("scenarios", { data: createData });
   const baseProvider = getProvider(createData.id);
-  // TODO copy UID
-  async function handleConfirm() {
-    setOpen(false);
-    setLoading(true);
-    dispatch(fetchStart());
+  async function cloneScenario() {
     await create();
 
     function createFields(field, fieldName) {
@@ -760,7 +744,9 @@ function CloneButton(props) {
       return values.map((a) => {
         const newA = JSON.parse(JSON.stringify(a));
         newA.id = idMap.get(a.id);
-        return baseProvider.create(fieldName, { data: newA });
+        return baseProvider.create(fieldName, {
+          data: withoutDisplayFields(newA),
+        });
       });
     }
 
@@ -770,7 +756,6 @@ function CloneButton(props) {
       ...createFields(images, "images"),
       ...createFields(sounds, "sounds"),
       ...createFields(mapStyles, "mapStyles"),
-      ...createFields(locations, "locations"),
       ...createFields(variables, "variables"),
       ...createFields(people, "people"),
     ]);
@@ -794,12 +779,12 @@ function CloneButton(props) {
       updateValueFor(a, "sender");
       if (a.variableUpdates) {
         a.variableUpdates.forEach((u) => {
-          updateValuesFor(u, "name");
+          updateValueFor(u, "variable");
         });
       }
       if (a.preconditions) {
         a.preconditions.forEach((p) => {
-          updateValuesFor(p, "variable");
+          updateValueFor(p, "variable");
         });
       }
       if (a.pictures) {
@@ -814,7 +799,9 @@ function CloneButton(props) {
         const newA = JSON.parse(JSON.stringify(a));
         newA.id = idMap.get(a.id);
         updateValuesFor(newA);
-        return baseProvider.create("broadcasts", { data: newA });
+        return baseProvider.create("broadcasts", {
+          data: withoutDisplayFields(newA),
+        });
       })
     );
     await Promise.all(
@@ -869,7 +856,7 @@ function CloneButton(props) {
               rec.fallback = fallback;
             }
             const asVariable = newA[`triggers_${oldId}_asVariable`];
-            if (fallback) {
+            if (asVariable) {
               delete newA[`triggers_${oldId}_asVariable`];
               rec.asVariable = asVariable;
             }
@@ -877,15 +864,26 @@ function CloneButton(props) {
           });
           newA.prevs = prevs;
         }
-        return baseProvider.create("actions", { data: newA });
+        return baseProvider.create("actions", {
+          data: withoutDisplayFields(newA),
+        });
       })
     );
+  }
 
-    setLoading(false);
+  async function handleConfirm() {
     setOpen(false);
-    notify("複製成功", "success");
-    dispatch(fetchEnd());
-    refresh();
+    setLoading(true);
+    try {
+      await cloneScenario();
+      notify("複製成功", { type: "success" });
+    } catch (e) {
+      console.error("failed to clone", e);
+      notify("複製失敗；原因 = " + e, { type: "error" });
+    } finally {
+      setLoading(false);
+      refresh();
+    }
   }
 
   return (
@@ -893,13 +891,15 @@ function CloneButton(props) {
       <Button
         label="複製"
         onClick={handleClick}
-        disabled={disabled || loading}
-        primary="true"
+        disabled={disabled || loading || !loaded}
       />
       <Confirm
         isOpen={open}
         title="確認複製"
-        content={`你即將複製一份《${getRecordField(props, "name")}》；確定嗎？`}
+        content={`你即將複製一份《${getRecordField(
+          record,
+          "name"
+        )}》；確定嗎？`}
         onConfirm={handleConfirm}
         onClose={handleDialogClose}
         confirm="確認複製"
@@ -910,20 +910,20 @@ function CloneButton(props) {
   );
 }
 
-const Title = ({ record }) => {
+const Title = () => {
+  const record = useRecordContext();
   return <span>劇本{record && record.name ? `：${record.name}` : ""}</span>;
 };
 
-export const ScenarioList = (props) => {
+export const ScenarioList = () => {
   return (
     <List
       title={<Title />}
-      {...props}
       sort={{ field: "ordinal", order: "DESC" }}
       perPage={25}
-      filters={<ScenarioFilter />}
+      filters={scenarioFilters}
     >
-      <Datagrid>
+      <Datagrid rowClick={false}>
         <TextField label="名稱" source="name" />
         <TextField label="說明" source="description" />
         <BooleanField label="正式上架" source="public" />
@@ -940,8 +940,7 @@ export const ScenarioList = (props) => {
 };
 
 const InputForm = (props) => {
-  const baseProvider = getProvider("dummy");
-  const uid = baseProvider.app.auth().currentUser?.uid || "dead";
+  const uid = getAuthUid() || "dead";
   const [isSuper, setIsSuper] = useState(false);
   useEffect(() => {
     isSuperUser(localStorage.getItem("uid")).then((s) => {
@@ -949,19 +948,19 @@ const InputForm = (props) => {
     });
   }, []);
   return (
-    <SimpleForm {...props}>
-      <TextInput disabled source="id" />
+    <SimpleForm>
+      <TextInput readOnly source="id" />
       <TextInput label="名稱" source="name" />
       <TextInput label="顯示名稱" source="displayName" />
       <TextInput label="說明" source="description" multiline />
       {!props.create && (
-        <NumberInput label="順序" source="ordinal" initialValue={Date.now()} />
+        <NumberInput label="順序" source="ordinal" defaultValue={Date.now()} />
       )}
       {!props.create && (
-        <DateTimeInput label="建立時間" disabled source="createdate" />
+        <DateTimeInput label="建立時間" readOnly source="createdate" />
       )}
       {!props.create && (
-        <DateTimeInput label="修改時間" disabled source="lastupdate" />
+        <DateTimeInput label="修改時間" readOnly source="lastupdate" />
       )}
       <h3>進階內容</h3>
       <BooleanInput label="開啟進階內容" source="advancedScenarioType" />
@@ -984,26 +983,22 @@ const InputForm = (props) => {
                 <BooleanInput
                   label="精選"
                   source="featured"
-                  disabled={!isSuper}
+                  readOnly={!isSuper}
                 />
                 <TextInput
                   label="通行碼"
                   source="passcode"
-                  disabled={!isSuper}
+                  readOnly={!isSuper}
                 />
-                <ArrayInput
-                  label="分類"
-                  source="categories"
-                  disabled={!isSuper}
-                >
-                  <SimpleFormIterator>
-                    <ReferenceInput
-                      label="類別"
-                      source="category"
-                      reference="categories"
-                      validate={[required()]}
-                    >
-                      <AutocompleteInput optionText="name" />
+                <ArrayInput label="分類" source="categories">
+                  <SimpleFormIterator disabled={!isSuper}>
+                    <ReferenceInput source="category" reference="categories">
+                      <AutocompleteInput
+                        label="類別"
+                        validate={[required()]}
+                        optionText="name"
+                        readOnly={!isSuper}
+                      />
                     </ReferenceInput>
                   </SimpleFormIterator>
                 </ArrayInput>
@@ -1011,7 +1006,7 @@ const InputForm = (props) => {
                   <BooleanInput
                     label="正式上架"
                     source="public"
-                    disabled={!isSuper}
+                    readOnly={!isSuper}
                   />
                 )}
               </>
@@ -1019,20 +1014,20 @@ const InputForm = (props) => {
           </>
         )}
       </FormDataConsumer>
-      <TextInput label="user id" source="uid" disabled initialValue={uid} />
+      <TextInput label="user id" source="uid" readOnly defaultValue={uid} />
     </SimpleForm>
   );
 };
 
-export const ScenarioCreate = (props) => (
-  <Create title={<Title />} {...props}>
-    <InputForm {...props} create={true} />
+export const ScenarioCreate = () => (
+  <Create title={<Title />}>
+    <InputForm create={true} />
   </Create>
 );
 
-export const ScenarioEdit = (props) => (
-  <Edit title={<Title />} {...props}>
-    <InputForm {...props} create={false} />
+export const ScenarioEdit = () => (
+  <Edit title={<Title />}>
+    <InputForm create={false} />
   </Edit>
 );
 

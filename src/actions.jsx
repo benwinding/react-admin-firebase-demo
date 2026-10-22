@@ -7,7 +7,6 @@ import {
   List,
   Create,
   Edit,
-  Filter,
   SimpleForm,
   TextField,
   TextInput,
@@ -25,6 +24,8 @@ import {
   ReferenceField,
   Toolbar,
   SaveButton,
+  useNotify,
+  useRedirect,
   useRecordContext,
   DeleteWithConfirmButton,
   NumberInput,
@@ -56,22 +57,22 @@ import {
   guideImageRemovalInput,
   silenceInput,
   getPrevDesc,
-  useStyles,
+  longInputSx,
 } from "./actionCommon";
 
 import { getRecordField } from "./utils";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 
-const ActionFilter = (props) => (
-  <Filter {...props}>
-    <TextInput label="Search" source="name" alwaysOn />
-  </Filter>
-);
+const actionFilters = [
+  <TextInput label="Search" source="name" alwaysOn key="name" />,
+];
 
-const Title = ({ record }) => {
+const Title = () => {
+  const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》動作
+      《{getCurrentScenarioName()}》動作
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
@@ -81,23 +82,18 @@ const getRowIndex = (record) => {
   return <div>{localStorage.getItem(key)}</div>;
 };
 
-export const ActionList = (props) => {
-  if (localStorage.getItem("scenario"))
+export const ActionList = () => {
+  if (getCurrentScenario())
     return (
-      <List
-        title={<Title />}
-        {...props}
-        perPage={100}
-        filters={<ActionFilter />}
-      >
-        <Datagrid>
+      <List title={<Title />} perPage={100} filters={actionFilters}>
+        <Datagrid rowClick={false}>
           <FunctionField label="編號" render={getRowIndex} />
           <TextField label="名稱" source="name" />
           <FunctionField label="條件" render={getConditionIcon} />
           <FunctionField label="內容" render={getContentIcon} />
           <EditButton label="編輯" />
           <ArrayField label="上一步" source="prevs">
-            <Datagrid>
+            <Datagrid rowClick={false}>
               <ReferenceField label="" source="prev" reference="actions">
                 <ChipField source="name" />
               </ReferenceField>
@@ -108,14 +104,14 @@ export const ActionList = (props) => {
         </Datagrid>
       </List>
     );
-  else return DummyList(props);
+  else return <DummyList />;
 };
 
-const DeleteButton = (props) => {
+const DeleteButton = () => {
   const record = useRecordContext();
+  if (!record) return null;
   return (
     <DeleteWithConfirmButton
-      {...props}
       label="刪除"
       confirmContent="將刪除此動作，確定嗎？"
       confirmTitle={`確認刪除《${record.name}》`}
@@ -124,36 +120,46 @@ const DeleteButton = (props) => {
   );
 };
 
-const ActionSaveButton = (props) => {
-  if (props.record && props.record.id) {
-    const redirect = `/actions/create/?source={'prevs': [{'prev' : '${props.record.id}', 'conditionType': 'ALWAYS' }]}`;
-    return <SaveButton {...props} redirect={redirect} />;
-  } else {
-    return <SaveButton {...props} />;
-  }
+// saves, then opens the create page with this action as the previous step
+const ActionSaveButton = ({ label }) => {
+  const notify = useNotify();
+  const redirect = useRedirect();
+  return (
+    <SaveButton
+      label={label}
+      type="button"
+      mutationOptions={{
+        onSuccess: (data) => {
+          // Edit is undoable: the update is sent when this notification closes
+          notify("ra.notification.updated", {
+            type: "info",
+            messageArgs: { smart_count: 1 },
+            undoable: true,
+          });
+          redirect("create", "actions", undefined, undefined, {
+            record: { prevs: [{ prev: data.id, conditionType: "ALWAYS" }] },
+          });
+        },
+      }}
+    />
+  );
 };
 
-const EditToolbar = (props) => {
+const EditToolbar = () => {
+  const record = useRecordContext();
   return (
-    <Toolbar {...props}>
+    <Toolbar>
       <span>
-        <SaveButton label="儲存" {...props} /> &nbsp;
-        {props.record && props.record.id && (
-          <ActionSaveButton label="儲存並建下一步" {...props} />
-        )}
+        <SaveButton label="儲存" /> &nbsp;
+        {record && record.id && <ActionSaveButton label="儲存並建下一步" />}
       </span>
     </Toolbar>
   );
 };
 
 const InputForm = (props) => {
-  const classes = useStyles();
   return (
-    <SimpleForm
-      {...props}
-      validate={validateBeforeSubmit}
-      toolbar={<EditToolbar />}
-    >
+    <SimpleForm validate={validateBeforeSubmit} toolbar={<EditToolbar />}>
       <FormDataConsumer>
         {({ formData }) => {
           const enableDelay =
@@ -176,7 +182,7 @@ const InputForm = (props) => {
           return (
             <>
               {props.showid === "true" ? (
-                <TextInput source="id" options={{ disabled: true }} />
+                <TextInput source="id" readOnly />
               ) : (
                 <></>
               )}{" "}
@@ -194,7 +200,6 @@ const InputForm = (props) => {
                 <ArrayInput label="前一步" source="prevs">
                   <SimpleFormIterator>
                     <ReferenceInput
-                      label="接續"
                       source="prev"
                       reference="actions"
                       sort={{
@@ -202,11 +207,11 @@ const InputForm = (props) => {
                         order: "DESC",
                       }}
                       perPage={1000}
-                      className={classes.longInput}
                     >
                       <SelectInput
+                        label="接續"
+                        sx={longInputSx}
                         optionText={prevRenderer}
-                        className={classes.longInput}
                       />
                     </ReferenceInput>
                     <SelectInput
@@ -217,15 +222,14 @@ const InputForm = (props) => {
                     <FormDataConsumer>
                       {({
                         scopedFormData, // The data for this item of the ArrayInput
-                        getSource, // A function to get the valid source inside an ArrayInput
                       }) => (
                         <>
                           {scopedFormData &&
                             scopedFormData.conditionType === "GEOFENCE" &&
-                            locationCondition(getSource)}
+                            locationCondition()}
                           {scopedFormData &&
                             scopedFormData.conditionType === "BEACON" &&
-                            beaconCondition(getSource)}
+                            beaconCondition()}
                           {scopedFormData &&
                             scopedFormData.conditionType === "TEXT" && (
                               <>
@@ -233,14 +237,14 @@ const InputForm = (props) => {
                                   <TextInput
                                     multiline
                                     label="文字"
-                                    source={getSource("userReply")}
+                                    source="userReply"
                                     validate={[required()]}
                                   />
                                 )}
                                 {
                                   <BooleanInput
                                     label="任意文字"
-                                    source={getSource("fallback")}
+                                    source="fallback"
                                     defaultValue={
                                       scopedFormData.userReply === "fallback:"
                                     }
@@ -249,13 +253,13 @@ const InputForm = (props) => {
                                 {
                                   <BooleanInput
                                     label="設為變數"
-                                    source={getSource("saveAsVariable")}
+                                    source="saveAsVariable"
                                   />
                                 }
                                 {scopedFormData.saveAsVariable && (
                                   <TextInput
                                     label="變數名"
-                                    source={getSource("asVariable")}
+                                    source="asVariable"
                                     validate={[required()]}
                                   />
                                 )}
@@ -273,7 +277,6 @@ const InputForm = (props) => {
               {!formData.firstAction && formData.advancedFlow && (
                 <>
                   <ReferenceArrayInput
-                    label="互斥於"
                     source="exclusiveWith"
                     reference="actions"
                     sort={{
@@ -282,12 +285,11 @@ const InputForm = (props) => {
                     }}
                     perPage={1000}
                   >
-                    <AutocompleteArrayInput optionText="name" />
+                    <AutocompleteArrayInput label="互斥於" optionText="name" />
                   </ReferenceArrayInput>
                   <ArrayInput label="附加條件" source="preconditions">
                     <SimpleFormIterator>
                       <ReferenceInput
-                        label="變數"
                         source="variable"
                         reference="variables"
                         sort={{
@@ -296,7 +298,7 @@ const InputForm = (props) => {
                         }}
                         perPage={1000}
                       >
-                        <SelectInput optionText="name" />
+                        <SelectInput label="變數" optionText="name" />
                       </ReferenceInput>
                       <SelectInput
                         label="比較"
@@ -338,17 +340,15 @@ const InputForm = (props) => {
               {formData.advancedActionType && (
                 <>
                   <ReferenceInput
-                    label="發送者"
                     source="sender"
                     reference="people"
                     sort={{
                       field: "lastupdate",
                       order: "DESC",
                     }}
-                    allowEmpty={true}
                     perPage={1000}
                   >
-                    <SelectInput optionText="name" />
+                    <SelectInput label="發送者" optionText="name" />
                   </ReferenceInput>
                   <BooleanInput label="停止聲音" source="hasSilence" />
                   {formData.hasSilence && silenceInput(formData, enableDelay)}
@@ -398,37 +398,36 @@ const InputForm = (props) => {
   );
 };
 
-export const ActionCreate = (props) => {
+export const ActionCreate = () => {
   return (
-    <Create title={<Title />} mutationMode="pessimistic" {...props}>
-      <InputForm {...props} showid="false" />
+    <Create title={<Title />}>
+      <InputForm showid="false" />
     </Create>
   );
 };
 
-export const ActionEdit = (props) => {
+export const ActionEdit = () => {
   return (
-    <Edit title={<Title />} {...props}>
-      <InputForm {...props} showid="true" />
+    <Edit title={<Title />}>
+      <InputForm showid="true" />
     </Edit>
   );
 };
 
 function NextButton(props) {
+  const record = useRecordContext(props);
   return (
     <CreateButton
       label="下一步"
-      to={{
-        pathname: "/actions/create",
-        state: {
-          record: {
-            prevs: [
-              {
-                prev: getRecordField(props, "id"),
-                conditionType: "ALWAYS",
-              },
-            ],
-          },
+      to="/actions/create"
+      state={{
+        record: {
+          prevs: [
+            {
+              prev: getRecordField(record, "id"),
+              conditionType: "ALWAYS",
+            },
+          ],
         },
       }}
     />

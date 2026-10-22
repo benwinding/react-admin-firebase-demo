@@ -6,51 +6,57 @@ import {
   Show,
   Create,
   Edit,
-  Filter,
   SimpleShowLayout,
   SimpleForm,
   TextField,
   TextInput,
   EditButton,
   DateTimeInput,
-  FormDataConsumer,
+  useRecordContext,
 } from "react-admin";
 
 import { getDeleteButton } from "./deleteResource";
 import { CoordinateInput, CoordinateField } from "./coordinates";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 
-const LocationFilter = (props) => (
-  <Filter {...props}>
-    <TextInput label="Search" source="name" alwaysOn />
-  </Filter>
-);
+const locationFilters = [
+  <TextInput label="Search" source="name" alwaysOn key="name" />,
+];
 
-const Title = ({ record }) => {
+const Title = () => {
+  const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》地點
+      《{getCurrentScenarioName()}》地點
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
 };
 
 const LocationDelete = (props) => {
-  const paths = ["soundCenterId", "locationId", "geofenceCenter"];
-  return getDeleteButton(props, "locations", "地點", paths.join(","));
+  const paths = [
+    "soundCenterId",
+    "locationId",
+    "geofenceCenter",
+    "prevs.geofenceCenter",
+  ];
+  return getDeleteButton(props, "locations", "地點", {
+    actions: paths,
+    broadcasts: paths,
+  });
 };
 
-export const LocationList = (props) => {
-  if (localStorage.getItem("scenario")) {
+export const LocationList = () => {
+  if (getCurrentScenario()) {
     return (
       <List
         title={<Title />}
-        {...props}
         sort={{ field: "name", order: "ASC" }}
-        perPage="100"
-        filters={<LocationFilter />}
+        perPage={100}
+        filters={locationFilters}
       >
-        <Datagrid>
+        <Datagrid rowClick={false}>
           <TextField label="編號" source="rowIndex" />
           <TextField label="名稱" source="name" />
           <CoordinateField label="座標" source="coordinates" />
@@ -60,11 +66,11 @@ export const LocationList = (props) => {
         </Datagrid>
       </List>
     );
-  } else return DummyList(props);
+  } else return <DummyList />;
 };
 
-export const LocationShow = (props) => (
-  <Show {...props}>
+export const LocationShow = () => (
+  <Show>
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="name" />
@@ -76,28 +82,24 @@ export const LocationShow = (props) => (
   </Show>
 );
 
-export const LocationCreate = (props) => (
-  <Create title={<Title />} {...props}>
+export const LocationCreate = () => (
+  <Create title={<Title />}>
     <SimpleForm>
       <TextInput label="名稱" source="name" />
-      <FormDataConsumer>
-        {({ formData }) => CoordinateInput(formData)}
-      </FormDataConsumer>
+      <CoordinateInput />
       <TextInput label="說明" source="description" />
     </SimpleForm>
   </Create>
 );
 
-export const LocationEdit = (props) => (
-  <Edit title={<Title />} {...props}>
+export const LocationEdit = () => (
+  <Edit title={<Title />}>
     <SimpleForm>
-      <TextInput disabled source="id" />
-      <DateTimeInput label="建立時間" disabled source="createdate" />
-      <DateTimeInput label="修改時間" disabled source="lastupdate" />
+      <TextInput readOnly source="id" />
+      <DateTimeInput label="建立時間" readOnly source="createdate" />
+      <DateTimeInput label="修改時間" readOnly source="lastupdate" />
       <TextInput label="名稱" source="name" />
-      <FormDataConsumer>
-        {({ formData }) => CoordinateInput(formData)}
-      </FormDataConsumer>
+      <CoordinateInput />
       <TextInput label="說明" source="description" />
     </SimpleForm>
   </Edit>

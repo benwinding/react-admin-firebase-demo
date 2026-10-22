@@ -4,7 +4,6 @@ import {
   ScenarioList,
   ScenarioCreate,
   ScenarioEdit,
-  scenarioReducer,
   getActionTree,
 } from "./scenarios";
 import { LocationList, LocationCreate, LocationEdit } from "./locations";
@@ -16,21 +15,19 @@ import { BroadcastList, BroadcastCreate, BroadcastEdit } from "./broadcasts";
 import { VariableList, VariableCreate, VariableEdit } from "./variables";
 import { PeopleList, PeopleCreate, PeopleEdit } from "./people";
 import { CategoryList, CategoryCreate, CategoryEdit } from "./categories";
-import { Admin, Resource, AppBar, Layout } from "react-admin";
+import { Admin, Resource, AppBar, Layout, TitlePortal } from "react-admin";
 import { useState, useEffect } from "react";
 import {
   FirebaseDataProvider,
   FirebaseAuthProvider,
 } from "react-admin-firebase";
-import { Provider } from "react-redux";
-import { Typography } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
-import { Route } from "react-router-dom";
+import { getAuth } from "firebase/auth";
+import { Box } from "@mui/material";
 
 import CustomLoginPage from "./CustomLoginPage";
 import CompositeDataProvider from "./compositeDataProvider";
-import { createHashHistory } from "history";
-import createAdminStore from "./createAdminStore";
+import { scenarioResources } from "./currentScenario";
+import { withoutDisplayFields } from "./utils";
 
 import { firebaseConfig as config } from "./FIREBASE_CONFIG";
 import { apiUrl } from "./serverCommon";
@@ -50,12 +47,9 @@ function createAdminDataProvider() {
   return FirebaseDataProvider(config, adminOptions);
 }
 
-function getProvider(scenarioId) {
-  const scenarioOtions = {
-    logging: false,
-    rootRef: "ghostspeak_editor/" + scenarioId,
-  };
-  return FirebaseDataProvider(config, scenarioOtions);
+// react-admin-firebase initializes the default Firebase app
+export function getAuthUid() {
+  return getAuth().currentUser?.uid;
 }
 
 export function isSuperUser(uid) {
@@ -84,29 +78,18 @@ function createAdminProvider() {
       ...adminDataProvider,
       getList: (resource, params) => {
         if (resource === "scenarios") {
-          const baseProvider = getProvider("dummy");
-          const authUid = baseProvider.app.auth().currentUser?.uid;
-          const authUid2 = baseProvider.app.auth()?._delegate?.currentUser?.uid;
+          const authId = getAuthUid();
           const localUid = localStorage.getItem("uid");
-          // console.log(
-          //   'uid',
-          //   authUid,
-          //   authUid2,
-          //   localUid,
-          //   baseProvider.app.auth(),
-          //   baseProvider.app.auth()._delegate.currentUser
-          // );
-          const authId = authUid || authUid2;
           if (authId && !localUid) {
             localStorage.setItem("uid", authId);
           }
           const filterUid = authId || localUid || "dead";
           return isSuperUser(filterUid).then((isSuper) => {
             console.log("is super?", isSuper);
-            if (!isSuper) {
-              params.filter.uid = filterUid;
-            }
-            return adminDataProvider.getList(resource, params);
+            const filter = isSuper
+              ? params.filter
+              : { ...params.filter, uid: filterUid };
+            return adminDataProvider.getList(resource, { ...params, filter });
           });
         } else if (resource === "categories") {
           // params.sort = { field: 'order', order: 'ASC' };
@@ -129,6 +112,17 @@ function createDataProvider(scenario) {
   return {
     dataProvider: {
       ...baseProvider,
+      // getList below adds display-only fields to the records
+      create: (resource, params) =>
+        baseProvider.create(resource, {
+          ...params,
+          data: withoutDisplayFields(params.data),
+        }),
+      update: (resource, params) =>
+        baseProvider.update(resource, {
+          ...params,
+          data: withoutDisplayFields(params.data),
+        }),
       getList: (resource, params) => {
         function getActionList() {
           const newParams = JSON.parse(JSON.stringify(params));
@@ -176,102 +170,53 @@ function createDataProvider(scenario) {
           : getActionList();
       },
     },
-    resources: [
-      "locations",
-      "actions",
-      "nodes",
-      "beacons",
-      "images",
-      "sounds",
-      "mapStyles",
-      "broadcasts",
-      "variables",
-      "people",
-    ],
+    resources: scenarioResources,
     name: scenario,
   };
 }
 
-const dataProvider = new CompositeDataProvider([
+const dataProvider = new CompositeDataProvider(
   createAdminProvider(),
-  createDataProvider("test"),
-]);
-
-const customReducers = { currentScenario: scenarioReducer };
-
-const history = createHashHistory();
-
-const useStyles = makeStyles(
-  () => ({
-    toolbar: {
-      paddingRight: 24,
-    },
-    menuButton: {
-      marginLeft: "0.2em",
-      marginRight: "0.2em",
-    },
-    menuButtonIconClosed: {},
-    menuButtonIconOpen: {},
-    title: {
-      flex: 1,
-      textOverflow: "ellipsis",
-      color: "#FFFFFF",
-      fontFamily: "sans-serif",
-    },
-    link: {
-      color: "#BBFFFF",
-    },
-    header: {
-      flex: 2,
-    },
-  }),
-  { name: "RaAppBar" }
+  createDataProvider
 );
-export const MyAppBar = (props) => {
-  const classes = useStyles(props);
-  return (
-    <AppBar {...props} userMenu={true}>
-      <Typography
-        variant="h6"
-        color="inherit"
-        className={classes.title}
-        id="react-admin-title"
-      />
-      <span className={classes.header}>
-        <b>Urban Baker街區編輯器</b>（公開活動授權歡迎與
-        <a
-          className={classes.link}
-          href="https://facebook.com/urbanbakers"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Urban Baker團隊
-        </a>
-        聯絡！）
-      </span>
-    </AppBar>
-  );
-};
 
-const MyLayout = (props) => <Layout {...props} appBar={MyAppBar} />;
+export const MyAppBar = () => (
+  <AppBar userMenu={true} sx={{ "& .RaAppBar-toolbar": { paddingRight: 3 } }}>
+    <TitlePortal
+      variant="h6"
+      sx={{
+        flex: 1,
+        textOverflow: "ellipsis",
+        color: "#FFFFFF",
+        fontFamily: "sans-serif",
+      }}
+    />
+    <Box component="span" sx={{ flex: 2, "& a": { color: "#BBFFFF" } }}>
+      <b>Urban Baker街區編輯器</b>（公開活動授權歡迎與
+      <a
+        href="https://facebook.com/urbanbakers"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Urban Baker團隊
+      </a>
+      聯絡！）
+    </Box>
+  </AppBar>
+);
 
-const routes = [
-  <Route key="urbanbaker" path="/urbanbaker" component={UrbanBaker} />,
-];
+const MyLayout = ({ children }) => (
+  <Layout appBar={MyAppBar}>{children}</Layout>
+);
 
-function Main() {
-  const i18nProvider = polyglotI18nProvider(() => englishMessages, "en", {
-    allowMissing: true,
-    onMissingKey: (key) => key,
-  });
-  // localStorage.removeItem('scenario')
-  const baseProvider = getProvider("dummy");
-  const authUid = baseProvider.app.auth().currentUser?.uid;
-  const authUid2 = baseProvider.app.auth()?._delegate?.currentUser?.uid;
-  const authId = authUid || authUid2;
-  const localUid = localStorage.getItem("uid");
-  const filterUid = authId || localUid || "dead";
-  // const isSuper = await isSuperUser(filterUid);
+const i18nProvider = polyglotI18nProvider(() => englishMessages, "en", {
+  allowMissing: true,
+  onMissingKey: (key) => key,
+});
+
+function App() {
+  document.title = "Urban Baker街區編輯器";
+  const filterUid = getAuthUid() || localStorage.getItem("uid") || "dead";
 
   const [isSuper, setIsSuper] = useState(false);
   useEffect(() => {
@@ -286,10 +231,7 @@ function Main() {
       dataProvider={dataProvider}
       authProvider={authProvider}
       i18nProvider={i18nProvider}
-      history={history}
-      customReducers={customReducers}
       layout={MyLayout}
-      customRoutes={routes}
     >
       <Resource
         name="scenarios"
@@ -378,45 +320,6 @@ function Main() {
         list={UrbanBaker}
       />
     </Admin>
-  );
-}
-
-var prevScenario = null;
-
-function App() {
-  const adminProvider = createAdminProvider();
-  const store = createAdminStore({
-    authProvider,
-    dataProvider,
-    history,
-    customReducers,
-  });
-  const storedScenario = localStorage.getItem("scenario");
-  document.title = "Urban Baker街區編輯器";
-  console.log("initial scenario", storedScenario);
-  if (storedScenario) {
-    console.log("setting initial data provider", storedScenario);
-    dataProvider.dataProviders = [
-      adminProvider,
-      createDataProvider(storedScenario),
-    ];
-    prevScenario = storedScenario;
-  }
-  store.subscribe(() => {
-    const scenario = store.getState().currentScenario.value;
-    if (scenario && scenario !== prevScenario) {
-      console.log("setting data provider", store.getState());
-      dataProvider.dataProviders = [
-        adminProvider,
-        createDataProvider(scenario),
-      ];
-      prevScenario = scenario;
-    }
-  });
-  return (
-    <Provider store={store}>
-      <Main />
-    </Provider>
   );
 }
 

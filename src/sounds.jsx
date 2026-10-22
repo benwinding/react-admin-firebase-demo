@@ -6,7 +6,6 @@ import {
   List,
   Create,
   Edit,
-  Filter,
   SimpleForm,
   TextField,
   TextInput,
@@ -15,20 +14,21 @@ import {
   FileField,
   FileInput,
   required,
+  useRecordContext,
 } from "react-admin";
 import { getDeleteButton } from "./deleteResource";
 
 import { DummyList } from "./dummy";
-const SoundFilter = (props) => (
-  <Filter {...props}>
-    <TextInput label="Search" source="name" alwaysOn />
-  </Filter>
-);
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
+const soundFilters = [
+  <TextInput label="Search" source="name" alwaysOn key="name" />,
+];
 
-const Title = ({ record }) => {
+const Title = () => {
+  const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》聲音
+      《{getCurrentScenarioName()}》聲音
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
@@ -36,20 +36,22 @@ const Title = ({ record }) => {
 
 const SoundDelete = (props) => {
   const paths = ["soundId"];
-  return getDeleteButton(props, "sounds", "聲音", paths.join(","));
+  return getDeleteButton(props, "sounds", "聲音", {
+    actions: paths,
+    broadcasts: paths,
+  });
 };
 
-export const SoundList = (props) => {
-  if (localStorage.getItem("scenario")) {
+export const SoundList = () => {
+  if (getCurrentScenario()) {
     return (
       <List
         title={<Title />}
-        {...props}
-        perPage="100"
+        perPage={100}
         sort={{ field: "name", order: "ASC" }}
-        filters={<SoundFilter />}
+        filters={soundFilters}
       >
-        <Datagrid>
+        <Datagrid rowClick={false}>
           <TextField label="編號" source="rowIndex" />
           <TextField label="名稱" source="name" />
           <FileField label="音檔" source="sound.src" title={"連結"} />
@@ -58,11 +60,11 @@ export const SoundList = (props) => {
         </Datagrid>
       </List>
     );
-  } else return DummyList(props);
+  } else return <DummyList />;
 };
 
-export const SoundCreate = (props) => (
-  <Create title={<Title />} {...props}>
+export const SoundCreate = () => (
+  <Create title={<Title />}>
     <SimpleForm>
       <TextInput label="名稱" source="name" />
       <FileInput label="音檔" source="sound" validate={required()}>
@@ -72,16 +74,16 @@ export const SoundCreate = (props) => (
   </Create>
 );
 
-export const SoundEdit = (props) => (
-  <Edit title={<Title />} {...props}>
+export const SoundEdit = () => (
+  <Edit title={<Title />}>
     <SimpleForm>
-      <TextInput disabled source="id" />
+      <TextInput readOnly source="id" />
       <TextInput label="名稱" source="name" />
       <FileInput label="音檔" source="sound" validate={required()}>
         <FileField source="src" title="name" />
       </FileInput>
-      <DateTimeInput label="建立時間" disabled source="createdate" />
-      <DateTimeInput label="修改時間" disabled source="lastupdate" />
+      <DateTimeInput label="建立時間" readOnly source="createdate" />
+      <DateTimeInput label="修改時間" readOnly source="lastupdate" />
     </SimpleForm>
   </Edit>
 );

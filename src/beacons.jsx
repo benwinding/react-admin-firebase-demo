@@ -6,42 +6,45 @@ import {
   List,
   Create,
   Edit,
-  Filter,
   SimpleForm,
   TextField,
   TextInput,
   EditButton,
   DateTimeInput,
   required,
+  useRecordContext,
 } from "react-admin";
 import { getDeleteButton } from "./deleteResource";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 
-const BeaconFilter = (props) => (
-  <Filter {...props}>
-    <TextInput label="Search" source="name" alwaysOn />
-  </Filter>
-);
+const beaconFilters = [
+  <TextInput label="Search" source="name" alwaysOn key="name" />,
+];
 
-const Title = ({ record }) => {
+const Title = () => {
+  const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》Beacon
+      《{getCurrentScenarioName()}》Beacon
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
 };
 
 const BeaconDelete = (props) => {
-  const paths = ["beacon"];
-  return getDeleteButton(props, "beacons", "beacon", paths.join(","));
+  const paths = ["beacon", "prevs.beacon", "beaconForSound"];
+  return getDeleteButton(props, "beacons", "beacon", {
+    actions: paths,
+    broadcasts: paths,
+  });
 };
 
-export const BeaconList = (props) => {
-  if (localStorage.getItem("scenario"))
+export const BeaconList = () => {
+  if (getCurrentScenario())
     return (
-      <List title={<Title />} {...props} filters={<BeaconFilter />}>
-        <Datagrid>
+      <List title={<Title />} filters={beaconFilters}>
+        <Datagrid rowClick={false}>
           <TextField label="編號" source="rowIndex" />
           <TextField label="名稱" source="name" />
           <TextField label="Beacon ID" source="beaconId" />
@@ -51,11 +54,11 @@ export const BeaconList = (props) => {
         </Datagrid>
       </List>
     );
-  else return DummyList(props);
+  else return <DummyList />;
 };
 
-export const BeaconCreate = (props) => (
-  <Create title={<Title />} {...props}>
+export const BeaconCreate = () => (
+  <Create title={<Title />}>
     <SimpleForm>
       <TextInput label="名稱" source="name" validate={required()} />
       <TextInput label="Beacon ID" source="beaconId" validate={required()} />
@@ -64,12 +67,12 @@ export const BeaconCreate = (props) => (
   </Create>
 );
 
-export const BeaconEdit = (props) => (
-  <Edit title={<Title />} {...props}>
+export const BeaconEdit = () => (
+  <Edit title={<Title />}>
     <SimpleForm>
-      <TextInput disabled source="id" />
-      <DateTimeInput label="建立時間" disabled source="createdate" />
-      <DateTimeInput label="修改時間" disabled source="lastupdate" />
+      <TextInput readOnly source="id" />
+      <DateTimeInput label="建立時間" readOnly source="createdate" />
+      <DateTimeInput label="修改時間" readOnly source="lastupdate" />
       <TextInput label="名稱" source="name" validate={required()} />
       <TextInput label="Beacon ID" source="beaconId" validate={required()} />
       <TextInput label="說明" source="description" />

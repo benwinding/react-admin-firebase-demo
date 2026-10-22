@@ -6,7 +6,6 @@ import {
   List,
   Create,
   Edit,
-  Filter,
   SimpleForm,
   TextField,
   TextInput,
@@ -16,35 +15,37 @@ import {
   number,
   NumberInput,
   NumberField,
+  useRecordContext,
 } from "react-admin";
 import { DummyList } from "./dummy";
+import { getCurrentScenario, getCurrentScenarioName } from "./currentScenario";
 import { getDeleteButton } from "./deleteResource";
 
-const VariableFilter = (props) => (
-  <Filter {...props}>
-    <TextInput label="Search" source="name" alwaysOn />
-  </Filter>
-);
+const variableFilters = [
+  <TextInput label="Search" source="name" alwaysOn key="name" />,
+];
 
-const Title = ({ record }) => {
+const Title = () => {
+  const record = useRecordContext();
   return (
     <span>
-      《{localStorage.getItem("scenarioName")}》變數
+      《{getCurrentScenarioName()}》變數
       {record && record.name ? `：'${record.name}'` : ""}
     </span>
   );
 };
 
 const VariableDelete = (props) => {
-  const paths = ["variableUpdates.variable"];
-  return getDeleteButton(props, "variables", "變數", paths.join(","));
+  return getDeleteButton(props, "variables", "變數", {
+    actions: ["variableUpdates.variable", "preconditions.variable"],
+  });
 };
 
-export const VariableList = (props) => {
-  if (localStorage.getItem("scenario"))
+export const VariableList = () => {
+  if (getCurrentScenario())
     return (
-      <List title={<Title />} {...props} filters={<VariableFilter />}>
-        <Datagrid>
+      <List title={<Title />} filters={variableFilters}>
+        <Datagrid rowClick={false}>
           <TextField label="編號" source="rowIndex" />
           <TextField label="名稱" source="name" />
           <NumberField label="初始值" source="value" />
@@ -54,11 +55,11 @@ export const VariableList = (props) => {
         </Datagrid>
       </List>
     );
-  else return DummyList(props);
+  else return <DummyList />;
 };
 
-export const VariableCreate = (props) => (
-  <Create title={<Title />} {...props}>
+export const VariableCreate = () => (
+  <Create title={<Title />}>
     <SimpleForm>
       <TextInput label="名稱" source="name" validate={[required()]} />
       <NumberInput
@@ -71,12 +72,12 @@ export const VariableCreate = (props) => (
   </Create>
 );
 
-export const VariableEdit = (props) => (
-  <Edit title={<Title />} {...props}>
+export const VariableEdit = () => (
+  <Edit title={<Title />}>
     <SimpleForm>
-      <TextInput disabled source="id" />
-      <DateTimeInput label="建立時間" disabled source="createdate" />
-      <DateTimeInput label="修改時間" disabled source="lastupdate" />
+      <TextInput readOnly source="id" />
+      <DateTimeInput label="建立時間" readOnly source="createdate" />
+      <DateTimeInput label="修改時間" readOnly source="lastupdate" />
       <TextInput label="名稱" source="name" validate={[required()]} />
       <NumberInput
         label="初始值"

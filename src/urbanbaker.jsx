@@ -1,72 +1,66 @@
 import * as React from "react";
 
-import { makeStyles } from "@material-ui/core/styles";
+import { Box } from "@mui/material";
 
-const useStyles = makeStyles(
-  () => ({
-    main: {
-      maxWidth: "600px",
-      marginLeft: "50px",
-      marginTop: "25px",
-      fontFamily: "sans-serif",
-    },
-    image: {
-      maxWidth: "600px",
-      width: "100%",
-    },
-    portrait: {
-      maxWidth: "190px",
-      maxHeight: "190px",
-      width: "33%",
-      height: "33%",
-      objectFit: "cover",
-      objectPosition: "0% 0%",
-      margin: "5px",
-    },
-    title: {
-      fontFamily: "sans-serif",
-    },
-    list: {
-      margin: "5px 0",
-    },
-    final: {
-      margin: "0 0 50px 0",
-    },
-  }),
-  { name: "UrbanBaker" }
-);
+const styles = {
+  maxWidth: "600px",
+  marginLeft: "50px",
+  marginTop: "25px",
+  fontFamily: "sans-serif",
+  "& .image": {
+    maxWidth: "600px",
+    width: "100%",
+  },
+  "& .portrait": {
+    maxWidth: "190px",
+    maxHeight: "190px",
+    width: "33%",
+    height: "33%",
+    objectFit: "cover",
+    objectPosition: "0% 0%",
+    margin: "5px",
+  },
+  "& .title": {
+    fontFamily: "sans-serif",
+  },
+  "& .list": {
+    margin: "5px 0",
+  },
+  "& .final": {
+    margin: "0 0 50px 0",
+  },
+};
 
-export const UrbanBaker = (props) => {
-  const classes = useStyles(props);
+export const UrbanBaker = () => {
   return (
-    <div className={classes.main}>
-      <h1 className={classes.title}>We Are Urban Baker</h1>
+    <Box sx={styles}>
+      <h1 className="title">We Are Urban Baker</h1>
       <span>
         <img
           src="https://storage.googleapis.com/daqiaotou/images/sungting.jpg"
-          className={classes.portrait}
+          className="portrait"
         />
         <img
           src="https://storage.googleapis.com/daqiaotou/images/flora.jpg"
-          className={classes.portrait}
+          className="portrait"
         />
         <img
           src="https://storage.googleapis.com/daqiaotou/images/toby.jpg"
-          className={classes.portrait}
+          className="portrait"
         />
       </span>
       <span>
         <img
           src="https://storage.googleapis.com/daqiaotou/images/wei.jpg"
-          className={classes.portrait}
+          className="portrait"
         />
         <img
           src="https://storage.googleapis.com/daqiaotou/images/hsuehmin-mask.jpg"
-          className={classes.portrait}
+          className="portrait"
         />
         <img
           src="https://storage.googleapis.com/daqiaotou/images/eason.jpg"
-          className={classes.portrait}
+          className="portrait"
         />
       </span>
       <p>
@@ -76,7 +70,7 @@ export const UrbanBaker = (props) => {
       </p>
       <img
         src="https://storage.googleapis.com/daqiaotou/images/daqiaotou-walking.jpg"
-        className={classes.image}
+        className="image"
       />
       <p>
         除近年代表作品，與
@@ -97,7 +91,7 @@ export const UrbanBaker = (props) => {
         Baker街區編輯器」讓非技術背景的人們也能創作自己的街區故事。有興趣的創作者皆可試用。
         若需要洽談進一步的合作、使用教學，或想將您的活動正式上架，請與我們連絡！
         <ul>
-          <li className={classes.list}>
+          <li className="list">
             FB粉絲專頁：
             <a
               href="https://www.facebook.com/urbanbakers"
@@ -107,7 +101,7 @@ export const UrbanBaker = (props) => {
               https://www.facebook.com/urbanbakers
             </a>
           </li>
-          <li className={classes.list}>
+          <li className="list">
             Email：
             <a
               href="mailto:team@urbanbaker.net"
@@ -117,7 +111,7 @@ export const UrbanBaker = (props) => {
               team@urbanbaker.net
             </a>
           </li>
-          <li className={classes.list}>
+          <li className="list">
             部分作品列表：
             <a
               href="https://linktr.ee/urbanbaker2022"
@@ -129,10 +123,10 @@ export const UrbanBaker = (props) => {
           </li>
         </ul>
       </p>
-      <p className={classes.final}>
+      <p className="final">
         請搭配Urban Baker手機應用程式使用：
         <ul>
-          <li className={classes.list}>
+          <li className="list">
             <a
               href="https://apps.apple.com/tw/app/urban-baker/id6443626002"
               target="_blank"
@@ -141,7 +135,7 @@ export const UrbanBaker = (props) => {
               iOS
             </a>
           </li>
-          <li className={classes.list}>
+          <li className="list">
             <a
               href="https://play.google.com/store/apps/details?id=tw.idv.idiotech.ghostspeak&hl=zh_TW"
               target="_blank"
@@ -152,6 +146,6 @@ export const UrbanBaker = (props) => {
           </li>
         </ul>
       </p>
-    </div>
+    </Box>
   );
 };

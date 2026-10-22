@@ -12,36 +12,34 @@ import {
   number,
   CheckboxGroupInput,
   Button,
-  useGetMany,
+  useGetOne,
 } from "react-admin";
 
 import "./modalImage.css";
 
-import { ColorInput } from "react-admin-color-input";
-import TimeInput from "./timepicker.js";
+import { ColorInput } from "./ColorInput";
+import TimeInput from "./timepicker";
 
-import BluetoothIcon from "@material-ui/icons/Bluetooth";
-import AudiotrackIcon from "@material-ui/icons/Audiotrack";
-import MessageIcon from "@material-ui/icons/Message";
-import MyLocationIcon from "@material-ui/icons/MyLocation";
-import LocationOffIcon from "@material-ui/icons/LocationOff";
-import AddLocationIcon from "@material-ui/icons/AddLocation";
-import CancelIcon from "@material-ui/icons/Cancel";
-import PhoneCallbackIcon from "@material-ui/icons/PhoneCallback";
-import PhoneDisabledIcon from "@material-ui/icons/PhoneDisabled";
-import MapIcon from "@material-ui/icons/Map";
-import ReplyIcon from "@material-ui/icons/Reply";
-import ArrowForwardIcon from "@material-ui/icons/ArrowForward";
-import HourglassBottomIcon from "@material-ui/icons/HourglassEmpty";
-import ImageIcon from "@material-ui/icons/Image";
-import ButtonIcon from "@material-ui/icons/NavigateNext";
-import VolumeOffIcon from "@material-ui/icons/VolumeOff";
+import BluetoothIcon from "@mui/icons-material/Bluetooth";
+import AudiotrackIcon from "@mui/icons-material/Audiotrack";
+import MessageIcon from "@mui/icons-material/Message";
+import MyLocationIcon from "@mui/icons-material/MyLocation";
+import LocationOffIcon from "@mui/icons-material/LocationOff";
+import AddLocationIcon from "@mui/icons-material/AddLocation";
+import CancelIcon from "@mui/icons-material/Cancel";
+import PhoneCallbackIcon from "@mui/icons-material/PhoneCallback";
+import PhoneDisabledIcon from "@mui/icons-material/PhoneDisabled";
+import MapIcon from "@mui/icons-material/Map";
+import ReplyIcon from "@mui/icons-material/Reply";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import HourglassBottomIcon from "@mui/icons-material/HourglassEmpty";
+import ImageIcon from "@mui/icons-material/Image";
+import ButtonIcon from "@mui/icons-material/NavigateNext";
+import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 
 import LocationReferenceInput from "./LocationReferenceInput";
 import SoundReferenceInput from "./SoundReferenceInput";
 import ImageReferenceInput from "./ImageReferenceInput";
-
-import { makeStyles } from "@material-ui/core/styles";
 
 const destinations = [
   { id: "NOTIFICATION", name: "通知列" },
@@ -146,11 +144,11 @@ const getContentIcon = (record) => {
   );
 };
 
-const locationCondition = (getSource) => (
+const locationCondition = () => (
   <>
     <LocationReferenceInput
       label="中心點"
-      source={getSource("geofenceCenter")}
+      source="geofenceCenter"
       reference="locations"
       validate={[required()]}
       perPage={1000}
@@ -160,33 +158,32 @@ const locationCondition = (getSource) => (
     <br />
     <NumberInput
       label="範圍 (整數)"
-      source={getSource("geofenceRadius")}
+      source="geofenceRadius"
       validate={[required(), number(), validateInteger]}
       step={1}
     />
     公尺
   </>
 );
-const beaconCondition = (getSource) => (
+const beaconCondition = () => (
   <>
-    <ReferenceInput
-      label="Beacon"
-      source={getSource("beacon")}
-      reference="beacons"
-      validate={[required()]}
-    >
-      <AutocompleteInput optionText="name" />
+    <ReferenceInput source="beacon" reference="beacons">
+      <AutocompleteInput
+        label="Beacon"
+        optionText="name"
+        validate={[required()]}
+      />
     </ReferenceInput>
     <SelectInput
       label="模式"
-      source={getSource("beaconType")}
+      source="beaconType"
       choices={beaconTypes}
       validate={[required()]}
     />
     <br />
     <NumberInput
       label="訊號值 (整數)"
-      source={getSource("beaconThreshold")}
+      source="beaconThreshold"
       validate={[required(), number(), validateInteger]}
     />
   </>
@@ -228,6 +225,20 @@ export function getMainType(action) {
     ? "guide-image-removal"
     : action.hasSound && action.soundType == "BACKGROUND"
     ? "sound"
+    : action.hasButtonStyle
+    ? "button-style"
+    : // the remaining content types must match the action ids in getActions,
+    // otherwise the next step waits for an action that is never sent
+    action.hasPopupStyle
+    ? "popup-style"
+    : action.hasSilence
+    ? "silence"
+    : action.hasVariableUpdate
+    ? "variable-update"
+    : action.endgame
+    ? "endgame"
+    : action.hasSound
+    ? "sound"
     : "button-style";
 }
 
@@ -263,6 +274,12 @@ export function getPrevDesc(action) {
       return "按鈕樣式改變";
     case "popup-style":
       return "圖文樣式改變";
+    case "silence":
+      return "聲音停止";
+    case "variable-update":
+      return "變數更新";
+    case "endgame":
+      return "活動結束";
     default:
       return "動作執行完畢";
   }
@@ -310,14 +327,10 @@ function modalButton(img, caption) {
   function handleClick() {
     setModal(img, caption);
   }
-  return <Button label={caption} onClick={handleClick} primary="true" />;
+  return <Button label={caption} onClick={handleClick} />;
 }
 
-export const useStyles = makeStyles({
-  longInput: {
-    width: "400px",
-  },
-});
+export const longInputSx = { width: "400px" };
 
 function addDelay(formData, name) {
   return (
@@ -325,7 +338,7 @@ function addDelay(formData, name) {
       <BooleanInput
         label="進階時間控制"
         source={name + "AdvancedTime"}
-        initialValue={false}
+        defaultValue={false}
       />
       {formData[name + "AdvancedTime"] && addAdvancedDelay(name)}
       {!formData[name + "AdvancedTime"] && (
@@ -445,7 +458,7 @@ const soundInput = (formData, enableDelay) => (
     <BooleanInput
       label="進階聲音控制"
       source="advancedSound"
-      initialValue={false}
+      defaultValue={false}
     />
 
     {formData.advancedSound && (
@@ -454,13 +467,13 @@ const soundInput = (formData, enableDelay) => (
           label="聲音類型"
           source="soundType"
           choices={soundTypes}
-          initialValue="MAIN"
+          defaultValue="MAIN"
         />
         <SelectInput
           label="音量模式"
           source="mode"
           choices={soundModes}
-          initialValue="STATIC_VOLUME"
+          defaultValue="STATIC_VOLUME"
         />
       </>
     )}
@@ -481,7 +494,7 @@ const soundInput = (formData, enableDelay) => (
           <NumberInput
             label="最小音量 (整數)"
             source="minVolume"
-            initialValue={0}
+            defaultValue={0}
             validate={[required(), number(), validateInteger]}
           />{" "}
           0-1之間
@@ -489,7 +502,7 @@ const soundInput = (formData, enableDelay) => (
           <NumberInput
             label="半徑 (整數)"
             source="range"
-            initialValue={30}
+            defaultValue={30}
             validate={[required(), number(), validateInteger]}
           />
           公尺
@@ -499,13 +512,12 @@ const soundInput = (formData, enableDelay) => (
     {formData.mode === "BEACON_VOLUME" && formData.advancedSound && (
       <>
         <div>
-          <ReferenceInput
-            label="Beacon"
-            source="beaconForSound"
-            reference="beacons"
-            validate={[required()]}
-          >
-            <AutocompleteInput optionText="name" />
+          <ReferenceInput source="beaconForSound" reference="beacons">
+            <AutocompleteInput
+              label="Beacon"
+              validate={[required()]}
+              optionText="name"
+            />
           </ReferenceInput>
           <br />
           <NumberInput
@@ -585,8 +597,8 @@ const validateBeforeSubmit = (value) => {
   return error;
 };
 
-const popupInput = (formData, enableDelay) => {
-  const classes = useStyles();
+// a component (not a plain function) because it uses hooks
+const PopupInput = ({ formData, enableDelay }) => {
   const initialDestination = React.useMemo(() => ["ALERT"], []);
   const dests = formData.destinations || [];
   const hasDialog = dests.includes("APP");
@@ -606,7 +618,7 @@ const popupInput = (formData, enableDelay) => {
               <TextInput
                 multiline
                 label="文字"
-                className={classes.longInput}
+                sx={longInputSx}
                 source="text"
               />
             </td>
@@ -660,7 +672,7 @@ const popupInput = (formData, enableDelay) => {
                   <BooleanInput
                     label="允許打字回應"
                     source="allowTextReply"
-                    initialValue={false}
+                    defaultValue={false}
                   />
                   {modalButton(
                     "https://storage.googleapis.com/daqiaotou/editor/image/text-input.jpg",
@@ -675,7 +687,7 @@ const popupInput = (formData, enableDelay) => {
                   <BooleanInput
                     label="不需用戶回應 (我了解必須自行計時關閉視窗)"
                     source="allowNoReply"
-                    initialValue={false}
+                    defaultValue={false}
                   />
                 </td>
               </tr>
@@ -691,7 +703,7 @@ const popupInput = (formData, enableDelay) => {
         label="顯示於"
         source="destinations"
         choices={destinations}
-        initialValue={initialDestination}
+        defaultValue={initialDestination}
       />
       <br />
       <span>
@@ -708,24 +720,29 @@ const popupInput = (formData, enableDelay) => {
         <BooleanInput
           label="回覆後保留提示視窗"
           source="dontCloseAlertAfterReply"
-          initialValue={false}
+          defaultValue={false}
         />
       )}
       {hasDialog && (
         <BooleanInput
           label="移除先前對話"
           source="clearDialog"
-          initialValue={false}
+          defaultValue={false}
         />
       )}
       {enableDelay && addDelay(formData, "popup")}
     </>
   );
-  const pictures = (formData.pictures || []).filter((x) => x);
-  const imageData = useGetMany(
+  // preview the first picture the author configured
+  const firstPictureId = (formData.pictures || []).find(
+    (p) => p && p.pictureId
+  )?.pictureId;
+  const { data: firstImage } = useGetOne(
     "images",
-    pictures.map((p) => p.pictureId)
-  ).data;
+    { id: firstPictureId },
+    { enabled: !!firstPictureId }
+  );
+  const firstImageSrc = firstPictureId && firstImage?.image?.src;
 
   const previewPane = (
     <>
@@ -766,8 +783,8 @@ const popupInput = (formData, enableDelay) => {
                     alignItems: "center",
                   }}
                 >
-                  {imageData.length > 0 && (
-                    <img src={imageData[0].image.src} style={{ width: 300 }} />
+                  {firstImageSrc && (
+                    <img src={firstImageSrc} style={{ width: 300 }} />
                   )}
                 </div>
                 <div
@@ -957,8 +974,8 @@ const popupInput = (formData, enableDelay) => {
                     alignItems: "center",
                   }}
                 >
-                  {imageData.length > 0 && (
-                    <img src={imageData[0].image.src} style={{ width: 280 }} />
+                  {firstImageSrc && (
+                    <img src={firstImageSrc} style={{ width: 280 }} />
                   )}
                 </div>
                 <div
@@ -1150,6 +1167,10 @@ const popupInput = (formData, enableDelay) => {
   );
 };
 
+const popupInput = (formData, enableDelay) => (
+  <PopupInput formData={formData} enableDelay={enableDelay} />
+);
+
 const popupDismissalInput = (formData, enableDelay) => {
   return (
     <>
@@ -1179,7 +1200,7 @@ const incomingCallInput = (formData, enableDelay) => (
       label="狀態"
       source="callStatus"
       choices={callTypes}
-      initialValue={"CONNECTING"}
+      defaultValue={"CONNECTING"}
     />{" "}
     <br />
     示意圖：
@@ -1246,15 +1267,13 @@ const markerInput = (formData, enableDelay) => (
 const markerRemovalInput = (formData, enableDelay) => (
   <>
     <ReferenceInput
-      label="圖釘"
       source="markerId"
       reference="actions"
-      validate={[required()]}
       filter={{ hasMarker: true }}
       sort={{ field: "lastupdate", order: "DESC" }}
       perPage={1000}
     >
-      <SelectInput optionText="title" />
+      <SelectInput label="圖釘" validate={[required()]} optionText="title" />
     </ReferenceInput>
     <br />
     {enableDelay && addDelay(formData, "markerRemoval")}
@@ -1265,16 +1284,15 @@ const mapStyleInput = (formData, enableDelay) => (
   <>
     {!formData.satellite && (
       <ReferenceInput
-        label="樣式"
         source="mapStyle"
         reference="mapStyles"
         sort={{ field: "lastupdate", order: "DESC" }}
         perPage={1000}
       >
-        <SelectInput optionText="name" />
+        <SelectInput label="樣式" optionText="name" />
       </ReferenceInput>
     )}
-    <BooleanInput label="衛星地圖" source="satellite" initialValue={false} />
+    <BooleanInput label="衛星地圖" source="satellite" defaultValue={false} />
     <br />
     <span>
       示意圖：
@@ -1304,7 +1322,7 @@ const introImageInput = (formData, enableDelay) => (
     <BooleanInput
       label="不使用首頁Logo"
       source="noIntroLogo"
-      initialValue={true}
+      defaultValue={true}
     />
     {!formData.noIntroLogo && (
       <>
@@ -1319,7 +1337,7 @@ const introImageInput = (formData, enableDelay) => (
         <BooleanInput
           label="向下相容模式(不要用)"
           source="advancedLogo"
-          initialValue={false}
+          defaultValue={false}
         />
         {formData.advancedLogo && (
           <>
@@ -1384,13 +1402,12 @@ const popupStyleInput = (formData, enableDelay) => (
 const variableUpdateInput = () => (
   <ArrayInput label="更新變數" source="variableUpdates">
     <SimpleFormIterator>
-      <ReferenceInput
-        label="變數"
-        source="variable"
-        reference="variables"
-        validate={[required()]}
-      >
-        <AutocompleteInput optionText="name" />
+      <ReferenceInput source="variable" reference="variables">
+        <AutocompleteInput
+          label="變數"
+          validate={[required()]}
+          optionText="name"
+        />
       </ReferenceInput>
       <SelectInput
         label="運算"
@@ -1412,7 +1429,7 @@ const endgameInput = (formData, enableDelay) => (
     <BooleanInput
       label="結束活動，返回劇本選擇畫面"
       source="endgame"
-      initialValue={false}
+      defaultValue={false}
     />
     <br />
     {enableDelay && addDelay(formData, "endgame")}
@@ -1440,14 +1457,13 @@ const guideImageRemovalInput = (formData, enableDelay) => (
 const silenceInput = (formData, enableDelay) => (
   <>
     <ReferenceInput
-      label="聲音"
       source="silencedSound"
       reference="actions"
       sort={{ field: "lastupdate", order: "DESC" }}
       filter={{ hasSound: true }}
       perPage={1000}
     >
-      <SelectInput optionText="name" />
+      <SelectInput label="聲音" optionText="name" />
     </ReferenceInput>
     <NumberInput
       label="淡出秒數 (整數)"
