@@ -15,7 +15,15 @@ import { BroadcastList, BroadcastCreate, BroadcastEdit } from "./broadcasts";
 import { VariableList, VariableCreate, VariableEdit } from "./variables";
 import { PeopleList, PeopleCreate, PeopleEdit } from "./people";
 import { CategoryList, CategoryCreate, CategoryEdit } from "./categories";
-import { Admin, Resource, AppBar, Layout, TitlePortal } from "react-admin";
+import {
+  Admin,
+  Resource,
+  AppBar,
+  Layout,
+  TitlePortal,
+  useResourceDefinitions,
+} from "react-admin";
+import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
   FirebaseDataProvider,
@@ -26,7 +34,11 @@ import { Box } from "@mui/material";
 
 import CustomLoginPage from "./CustomLoginPage";
 import CompositeDataProvider from "./compositeDataProvider";
-import { scenarioResources } from "./currentScenario";
+import {
+  scenarioResources,
+  useCurrentScenario,
+  getCurrentScenarioName,
+} from "./currentScenario";
 import { withoutDisplayFields } from "./utils";
 
 import { firebaseConfig as config } from "./FIREBASE_CONFIG";
@@ -180,6 +192,8 @@ const dataProvider = new CompositeDataProvider(
   createDataProvider
 );
 
+const appTitle = "Urban Baker街區編輯器";
+
 export const MyAppBar = () => (
   <AppBar userMenu={true} sx={{ "& .RaAppBar-toolbar": { paddingRight: 3 } }}>
     <TitlePortal
@@ -192,7 +206,7 @@ export const MyAppBar = () => (
       }}
     />
     <Box component="span" sx={{ flex: 2, "& a": { color: "#BBFFFF" } }}>
-      <b>Urban Baker街區編輯器</b>（公開活動授權歡迎與
+      <b>{appTitle}</b>（公開活動授權歡迎與
       <a
         href="https://facebook.com/urbanbakers"
         target="_blank"
@@ -205,8 +219,30 @@ export const MyAppBar = () => (
   </AppBar>
 );
 
+// Window title: page, then the scenario for per-scenario pages,
+// e.g. "動作 · 《Demo》 · Urban Baker街區編輯器"
+const DocumentTitle = () => {
+  const location = useLocation();
+  const resources = useResourceDefinitions();
+  const scenarioId = useCurrentScenario();
+  const resource = location.pathname.split("/")[1];
+  const label = resources[resource]?.options?.label;
+  const scenarioName =
+    scenarioId && scenarioResources.includes(resource)
+      ? `《${getCurrentScenarioName()}》`
+      : null;
+  const title = [label, scenarioName, appTitle].filter(Boolean).join(" · ");
+  useEffect(() => {
+    document.title = title;
+  }, [title]);
+  return null;
+};
+
 const MyLayout = ({ children }) => (
-  <Layout appBar={MyAppBar}>{children}</Layout>
+  <Layout appBar={MyAppBar}>
+    <DocumentTitle />
+    {children}
+  </Layout>
 );
 
 const i18nProvider = polyglotI18nProvider(() => englishMessages, "en", {
@@ -215,7 +251,6 @@ const i18nProvider = polyglotI18nProvider(() => englishMessages, "en", {
 });
 
 function App() {
-  document.title = "Urban Baker街區編輯器";
   const filterUid = getAuthUid() || localStorage.getItem("uid") || "dead";
 
   const [isSuper, setIsSuper] = useState(false);
